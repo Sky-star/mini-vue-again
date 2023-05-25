@@ -1,39 +1,53 @@
+// effect实现步骤
+// 1. 利用 proxy 实现基本的响应式系统
+// 2. 解决副作用函数硬编码在文件内部的问题。 引出effect函数的出现
+// 3. 解决effect函数中，不同对象的属性的变化也会触发副作用函数的问题。 
+//    引出存储副作用函数容器的结构的重新设计(树形结构)
+// 4. 解决副作用函数内部分支切换导致遗留副作用函数的问题。
+//    引出副作用函数的反向依赖收集,以及清除副作用函数的函数cleanup
+//    解决调用cleanup函数导致的无限循环问题。即引出对集合遍历时，内部一边对Set集合元素添加，一边删除,会导致无限循环
+//    引出，复制原始Set来解决
+
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
-
-function effect(fn: Function) {
-    // 当调用 effect 注册副作用函数时，将副作用函数 fn 赋值给 activeEffect
-    activeEffect = fn
-    // 执行副作用函数
-    fn()
-}
-
-const data = { text: 1 }
-
 // 存储副作用函数的容器
 const bucket = new WeakMap()
 
-const obj = new Proxy(data, {
-    // 拦截读取操作
-    get(target, key) {
-        // 将 副作用函数 activeEffect 存储到容器当中
-        track(target, key)
-        // 返回属性值
-        return target[key]
-    },
-    // 拦截设置操作
-    set(target, key, newValue) {
-        // 设置属性值
-        target[key] = newValue
-        // 将副作用函数从容器中取出并执行
-        trigger(target, key)
+function effect(fn: Function) {
 
-        return true
-    },
-})
+    // 不要将反向依赖集合挂载在原始的副作用函数上, 所以包裹一层
+    const effectFn = () => {
+        // 完成副作用函数清除工作
+        cleanup(effectFn)
+        // 当调用 effect 注册副作用函数时，将副作用函数 effectFn 赋值给 activeEffect
+        // 不能用 fn， 否则反向收集的依赖就找不到了
+        activeEffect = effectFn
+        // 执行副作用函数
+        fn()
+    }
+
+    // 初始化反向依赖收集的数组
+    effectFn.deps = []
+
+    effectFn()
+}
+
+// 解决分支切换导致的副作用函数遗留的问题
+function cleanup(effectFn) {
+    // 遍历反向收集的依赖集合
+    for (let i = 0; i < effectFn.deps.length; i++) {
+        // 获取依赖集合
+        const deps = effectFn.deps[i]
+        // 将 effectFn 从依赖集合中删除
+        deps.delete(effectFn)
+    }
+
+    // 重置 effectFn.deps 数组
+    effectFn.deps.length = 0
+}
 
 
-
+// 依赖收集
 function track(target, key) {
     // 没有 activeEffect 直接 return
     if (!activeEffect) return
@@ -57,8 +71,13 @@ function track(target, key) {
 
     // 最后将当前激活的副作用函数添加到集合当中, 完成最终的树形结构
     deps.add(activeEffect)
+
+    // 进行反向依赖收集
+    activeEffect.deps.push(deps)
 }
 
+
+// 依赖触发
 function trigger(target, key) {
 
     // 根据 target 从容器中取得depsMap
@@ -69,8 +88,11 @@ function trigger(target, key) {
     // 根据 key 取得所有的副作用函数 effects
     const effects = depsMap.get(key)
 
+    // 解决无限循环的问题
+    const effectsToRun: Set<Function> = new Set(effects)
+
     // 执行副作用函数
-    effects && effects.forEach((fn) => fn())
+    effectsToRun.forEach(effectFn => effectFn())
 }
 
 export { trigger, track, effect }
