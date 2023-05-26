@@ -6,12 +6,16 @@
 // 4. 解决副作用函数内部分支切换导致遗留副作用函数的问题。
 //    引出副作用函数的反向依赖收集,以及清除副作用函数的函数cleanup
 //    解决调用cleanup函数导致的无限循环问题。即引出对集合遍历时，内部一边对Set集合元素添加，一边删除,会导致无限循环
-//    引出，复制原始Set来解决
+//    引出复制原始Set来解决
+// 5. 解决effect函数嵌套导致的,副作用函数执行错误问题
+//    引出effectStack模拟栈的操作来使activeEffect拥有正确的指向
 
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
 // 存储副作用函数的容器
 const bucket = new WeakMap()
+// 副作用函数栈
+const effectStack: Function[] = []
 
 function effect(fn: Function) {
 
@@ -22,8 +26,14 @@ function effect(fn: Function) {
         // 当调用 effect 注册副作用函数时，将副作用函数 effectFn 赋值给 activeEffect
         // 不能用 fn， 否则反向收集的依赖就找不到了
         activeEffect = effectFn
+        // 将当前执行的副作用函数压入栈顶
+        effectStack.push(effectFn)
         // 执行副作用函数
         fn()
+        // 副作用函数执行完毕后，将当前副作用函数出栈
+        effectStack.pop()
+        // 并将activeEffect还原为之前的值
+        activeEffect = effectStack[effectStack.length - 1]
     }
 
     // 初始化反向依赖收集的数组

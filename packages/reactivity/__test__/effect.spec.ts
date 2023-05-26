@@ -74,4 +74,37 @@ describe('effect', () => {
         expect(text).toBe('not');
     });
 
+    it('effect函数嵌套问题', () => {
+        const obj = reactive({ foo: true, bar: true })
+        let temp1, temp2
+        const fn1 = vi.fn(() => {
+
+            console.log('fn1 执行');
+
+            effect(fn2)
+
+            temp1 = obj.foo
+        })
+
+        const fn2 = vi.fn(() => {
+            console.log('fn2 执行');
+            temp2 = obj.bar
+        })
+
+        effect(fn1)
+
+        expect(fn1).toBeCalledTimes(1)
+        expect(fn2).toBeCalledTimes(1)
+
+        obj.foo = false
+
+        expect(fn1).toBeCalledTimes(2)
+        expect(fn2).toBeCalledTimes(2)
+
+        // obj.bar = false
+
+        // expect(fn1).toBeCalledTimes(2)
+        // expect(fn2).toBeCalledTimes(3)
+    });
+
 });
