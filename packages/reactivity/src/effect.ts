@@ -9,6 +9,8 @@
 //    引出复制原始Set来解决
 // 5. 解决effect函数嵌套导致的,副作用函数执行错误问题
 //    引出effectStack模拟栈的操作来使activeEffect拥有正确的指向
+// 6. 将副作用函数执行时机交由用户控制
+//    引出scheduler的实现
 
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
@@ -17,7 +19,7 @@ const bucket = new WeakMap()
 // 副作用函数栈
 const effectStack: Function[] = []
 
-function effect(fn: Function) {
+function effect(fn: Function, options = {}) {
 
     // 不要将反向依赖集合挂载在原始的副作用函数上, 所以包裹一层
     const effectFn = () => {
@@ -35,6 +37,9 @@ function effect(fn: Function) {
         // 并将activeEffect还原为之前的值
         activeEffect = effectStack[effectStack.length - 1]
     }
+
+    // 将 options 挂载到 effectFn上
+    effectFn.options = options
 
     // 初始化反向依赖收集的数组
     effectFn.deps = []
@@ -99,10 +104,16 @@ function trigger(target, key) {
     const effects = depsMap.get(key)
 
     // 解决无限循环的问题
-    const effectsToRun: Set<Function> = new Set(effects)
+    const effectsToRun: Set<any> = new Set(effects)
 
     // 执行副作用函数
-    effectsToRun.forEach(effectFn => effectFn())
+    effectsToRun.forEach(effectFn => {
+        if (effectFn.options.scheduler) {
+            effectFn.options.scheduler(effectFn)
+        } else {
+            effectFn()
+        }
+    })
 }
 
 export { trigger, track, effect }
