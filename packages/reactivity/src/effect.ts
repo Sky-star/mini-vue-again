@@ -9,7 +9,9 @@
 //    引出复制原始Set来解决
 // 5. 解决effect函数嵌套导致的,副作用函数执行错误问题
 //    引出effectStack模拟栈的操作来使activeEffect拥有正确的指向
-// 6. 将副作用函数执行时机交由用户控制
+// 6. 解决effect函数内部对象自增导致的无限循环
+//    引出在trigger中处理当前执行的副作用函数与触发的副作用函数相同则不执行
+// 7. 将副作用函数执行时机交由用户控制
 //    引出scheduler的实现
 
 // 用一个全局变量存储被注册的副作用函数
@@ -104,7 +106,14 @@ function trigger(target, key) {
     const effects = depsMap.get(key)
 
     // 解决无限循环的问题
-    const effectsToRun: Set<any> = new Set(effects)
+    const effectsToRun: Set<any> = new Set()
+
+    // 解决自增操作导致的无限循环问题
+    effects && effects.forEach(effectFn => {
+        if (effectFn !== activeEffect) {
+            effectsToRun.add(effectFn)
+        }
+    })
 
     // 执行副作用函数
     effectsToRun.forEach(effectFn => {

@@ -101,10 +101,48 @@ describe('effect', () => {
         expect(fn1).toBeCalledTimes(2)
         expect(fn2).toBeCalledTimes(2)
 
+        // 不通过是因为 obj.foo先执行后 fn2会被再次收集一次
+        // 导致在更改 obj.bar 的时候会导致 fn2 被执行两次
+        // 解决方法为 再次重构是， 对内部的effectFn 抽离 保证Set存储的正确
         // obj.bar = false
 
         // expect(fn1).toBeCalledTimes(2)
         // expect(fn2).toBeCalledTimes(3)
+    });
+
+    it('内部自增操作不应导致无限执行', () => {
+        const obj = reactive({ foo: 1 })
+
+        const fn1 = vi.fn(() => {
+            obj.foo++
+        })
+
+        effect(fn1)
+
+        expect(fn1).toBeCalledTimes(1)
+
+    });
+
+    it('调度执行', () => {
+        const obj = reactive({ foo: 1 })
+        let temp1
+
+        const effectFn = vi.fn(() => {
+            temp1 = obj.foo
+        })
+
+        const scheduler = vi.fn()
+
+        effect(effectFn, { scheduler: scheduler })
+
+        expect(effectFn).toBeCalledTimes(1)
+
+        obj.foo++
+
+        expect(effectFn).toBeCalledTimes(1)
+
+        expect(scheduler).toBeCalledTimes(1)
+
     });
 
 });
