@@ -145,4 +145,12 @@ describe('effect', () => {
 
     });
 
+    it('懒执行', () => {
+        const fn = vi.fn()
+
+        effect(fn, { lazy: true })
+
+        expect(fn).toBeCalledTimes(0)
+    });
+
 });
