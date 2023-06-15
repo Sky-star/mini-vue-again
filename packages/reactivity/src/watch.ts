@@ -1,6 +1,6 @@
 import { effect } from "./effect"
 
-function watch(source, cb) {
+function watch(source, cb, options: any = {}) {
     // 定义 getter
     let getter
 
@@ -14,6 +14,15 @@ function watch(source, cb) {
 
     // 定义旧值与新值
     let oldValue, newValue
+    // 提取 scheduler 调度函数为一个独立的 job 函数
+    const job = () => {
+        // 在 scheduler 中重新执行副作用函数，得到的是新值
+        newValue = effectFn()
+        // 将旧值和新值作为回调函数参数
+        cb(newValue, oldValue)
+        // 更新旧值， 不然下一次会得到错误的旧值
+        oldValue = newValue
+    }
     // 使用 effect 注册副作用函数时， 开启 lazy选项， 并把返回值存储到 effectFn中以便后续手动调用
     const effectFn = effect(
         // 执行 getter
@@ -21,18 +30,25 @@ function watch(source, cb) {
         {
             lazy: true,
             scheduler() {
-                // 在 scheduler 中重新执行副作用函数，得到的是新值
-                newValue = effectFn()
-                // 将旧值和新值作为回调函数参数
-                cb(newValue, oldValue)
-                // 更新旧值， 不然下一次会得到错误的旧值
-                oldValue = newValue
+                // 在调度函数中判断 flush是否为'post'，如果是将其放到微任务队列中执行
+                if (options.flush === 'post') {
+                    const p = Promise.resolve()
+                    p.then(job)
+                } else {
+                    job()
+                }
             }
         }
     )
 
-    // 手动调用副作用函数， 拿到的值就是旧值
-    oldValue = effectFn()
+    if (options.immediate) {
+        // 当 immediate 为 true 时立即执行 job， 从而触发回调执行
+        job()
+    } else {
+        // 手动调用副作用函数， 拿到的值就是旧值
+        oldValue = effectFn()
+    }
+
 }
 
 function traverse(value: any, seen = new Set()) {

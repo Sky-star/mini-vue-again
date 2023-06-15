@@ -51,4 +51,42 @@ describe('watch', () => {
         expect(newVal).toBe(2)
         expect(oldVal).toBe(1)
     });
+
+    it('立即执行', () => {
+        const obj = reactive({ foo: 1, bar: 1 })
+        const fn = vi.fn()
+        watch(() => obj.foo, fn, { immediate: true })
+
+        expect(fn).toBeCalledTimes(1)
+    });
+
+    it('回调执行时机-pre', () => {
+
+        const obj = reactive({ foo: 1, bar: 1 })
+        let newValue = obj.foo
+        const fn = vi.fn((newVal, oldVal) => {
+            newValue = newVal
+            expect(obj.foo).toBe(2)
+        })
+
+        watch(() => obj.foo, fn, { flush: 'pre' })
+
+        obj.foo++
+        expect(newValue).toBe(2)
+    });
+
+    it('回调执行时机-post', () => {
+
+        const obj = reactive({ foo: 1, bar: 1 })
+        let newValue = obj.foo
+        const fn = vi.fn((newVal, oldVal) => {
+            newValue = newVal
+            expect(obj.foo).toBe(2)
+        })
+
+        watch(() => obj.foo, fn, { flush: 'post' })
+
+        obj.foo++
+        expect(newValue).toBe(1)
+    });
 });
