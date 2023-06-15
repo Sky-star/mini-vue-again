@@ -14,7 +14,7 @@ function computed(getter: Function) {
         scheduler() {
             if (!dirty) {
                 dirty = true
-                // 党计算属性依赖的响应式数据发生变化时， 手动调用 trigger 函数触发响应
+                // 当计算属性依赖的响应式数据发生变化时， 手动调用 trigger 函数触发响应
                 trigger(obj, 'value')
             }
         }

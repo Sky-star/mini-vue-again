@@ -14,7 +14,7 @@ describe('computed', () => {
         expect(sumRes.value).toBe(3)
     });
 
-    it('计算属性值的缓存j', () => {
+    it('计算属性值的缓存', () => {
 
         const obj = reactive({ foo: 1, bar: 2 })
 
