@@ -89,4 +89,29 @@ describe('watch', () => {
         obj.foo++
         expect(newValue).toBe(1)
     });
+
+    it('副作用函数过期', () => {
+        const obj = reactive({ foo: 1 })
+
+        let finalData
+
+        watch(obj, async (newValue, oldValue, onInvalidate) => {
+            let expired = false
+
+            onInvalidate(() => {
+                expired = true
+            })
+
+            const res = await fetch('path/to/request')
+            if (!expired) {
+                finalData = res
+            }
+
+        })
+
+        obj.foo++
+        setTimeout(() => {
+            obj.foo++
+        }, 200)
+    });
 });
