@@ -9,4 +9,19 @@ describe('reactive', () => {
         expect(original).not.toBe(after)
         expect(after.age).toBe(10)
     });
+
+    it('this指向问题应该正确响应', () => {
+        const obj = {
+            foo: 1,
+            get bar() {
+                return this.foo
+            }
+        }
+
+        const p = reactive(obj)
+
+        p.foo++
+
+        expect(p.foo).toBe(2)
+    });
 });
