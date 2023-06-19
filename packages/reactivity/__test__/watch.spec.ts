@@ -102,7 +102,8 @@ describe('watch', () => {
                 expired = true
             })
 
-            const res = await fetch('path/to/request')
+            // const res = await fetch('path/to/request')
+            const res = 'back data'
             if (!expired) {
                 finalData = res
             }
