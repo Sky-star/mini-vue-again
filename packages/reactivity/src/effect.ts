@@ -15,6 +15,8 @@
 //    引出 scheduler 的实现
 // 8. 设计懒执行的 effect 模式，为了方便某些情境下的需求(computed)
 
+import { ITERATE_KEY, TriggerType } from "./reactive"
+
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
 // 存储副作用函数的容器
@@ -104,7 +106,7 @@ function track(target, key) {
 
 
 // 依赖触发
-function trigger(target, key) {
+function trigger(target, key, type) {
 
     // 根据 target 从容器中取得depsMap
     const depsMap = bucket.get(target)
@@ -113,6 +115,9 @@ function trigger(target, key) {
 
     // 根据 key 取得所有的副作用函数 effects
     const effects = depsMap.get(key)
+
+    // 根据 ITERATE_KEY 取得所有相关的副作用函数
+    const iterateEffects = depsMap.get(ITERATE_KEY)
 
     // 解决无限循环的问题
     const effectsToRun: Set<any> = new Set()
@@ -123,6 +128,16 @@ function trigger(target, key) {
             effectsToRun.add(effectFn)
         }
     })
+
+    // 只有当操作类型为 ADD 或 DELETE 时，才会触发与 ITERATE_KEY 相关联的副作用函数
+    if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+        // 将与 ITERATE_KEY 相关联的副作用函数添加到 effectToRun
+        iterateEffects && iterateEffects.forEach(effectFn => {
+            if (effectFn !== activeEffect) {
+                effectsToRun.add(effectFn)
+            }
+        })
+    }
 
     // 执行副作用函数
     effectsToRun.forEach(effectFn => {

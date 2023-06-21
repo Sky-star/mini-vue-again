@@ -153,4 +153,59 @@ describe('effect', () => {
         expect(fn).toBeCalledTimes(0)
     });
 
+    it('响应in操作符', () => {
+        const obj = { foo: 1 }
+
+        const p = reactive(obj)
+
+        const fn = vi.fn(() => {
+            'foo' in p
+        })
+
+        effect(fn)
+
+        p.foo = 2
+
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
+    it('响应forIn循环', () => {
+        const obj = { foo: 1 }
+
+        const p = reactive(obj)
+
+        const fn = vi.fn(() => {
+            for (const key in p) {
+                console.log(key);
+            }
+        })
+
+        effect(fn)
+
+        p.bar = 2
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('响应delete操作', () => {
+
+        const obj = { foo: 1, bar: 2 }
+
+        const p = reactive(obj)
+
+        let temp
+
+        effect(() => {
+            temp = p.bar
+        })
+
+        expect(temp).toBe(2)
+
+        delete p.bar
+
+        expect(temp).toBe(undefined)
+
+    });
+
 });
