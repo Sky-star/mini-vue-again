@@ -2,6 +2,8 @@ import { track, trigger } from './effect';
 
 const ITERATE_KEY = Symbol()
 
+const RAW_KEY = Symbol()
+
 const TriggerType = {
     SET: 'SET',
     ADD: 'ADD',
@@ -12,6 +14,10 @@ function reactive(data) {
     const proxy = new Proxy(data, {
         // 拦截读取操作
         get(target, key, receiver) {
+            // 代理对象可以通过 raw 属性访问原始数据
+            if (key === RAW_KEY) {
+                return target
+            }
             // 将 副作用函数 activeEffect 存储到容器当中
             track(target, key)
             // 返回属性值
@@ -19,12 +25,20 @@ function reactive(data) {
         },
         // 拦截设置操作
         set(target, key, newValue, receiver) {
+            // 先获取旧值
+            const oldValue = target[key]
             // 如果属性不存在， 则说明添加新属性， 否则是设置已有属性
             const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.SET : TriggerType.ADD
             // 设置属性值
             const res = Reflect.set(target, key, newValue, receiver)
-            // 将副作用函数从容器中取出并执行
-            trigger(target, key, type)
+            // 只有当 receiver 是 target 的代理对象时才进行响应(原型继承的问题)
+            if (target === receiver[RAW_KEY]) {
+                // 如果值发生了变化再触发响应，并且需要处理下 NaN 的问题
+                if (newValue !== oldValue && (oldValue === oldValue || newValue === newValue)) {
+                    // 将副作用函数从容器中取出并执行
+                    trigger(target, key, type)
+                }
+            }
 
             return res
         },

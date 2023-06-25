@@ -177,7 +177,7 @@ describe('effect', () => {
 
         const fn = vi.fn(() => {
             for (const key in p) {
-                console.log(key);
+                // console.log(key);
             }
         })
 
@@ -207,5 +207,60 @@ describe('effect', () => {
         expect(temp).toBe(undefined)
 
     });
+
+    it('响应数据的值不发生变化时, 不应执行', () => {
+        const obj = { foo: 1 }
+
+        const p = reactive(obj)
+
+        const fn = vi.fn(() => {
+            p.foo
+        })
+
+        effect(fn)
+
+        p.foo = 1
+
+        expect(fn).toBeCalledTimes(1)
+    });
+
+    it('响应数据的值前后为NaN时, 不应执行', () => {
+
+        const obj = { foo: NaN }
+
+        const p = reactive(obj)
+
+        const fn = vi.fn(() => {
+            p.foo
+        })
+
+        effect(fn)
+
+        p.foo = NaN
+
+        expect(fn).toBeCalledTimes(1)
+    });
+
+    it('继承原型属性，不应重复执行', () => {
+        const obj = {}
+        const proto = { bar: 1 }
+        const child = reactive(obj)
+        const parent = reactive(proto)
+
+        // 使 parent 作为 child 的原型
+        Object.setPrototypeOf(child, parent)
+
+        const fn = vi.fn(() => {
+            child.bar
+        })
+
+        effect(fn)
+
+        child.bar = 2
+
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
 
 });
