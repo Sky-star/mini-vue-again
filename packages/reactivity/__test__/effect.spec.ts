@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect } from '../src/effect';
-import { reactive } from '../src/reactive';
+import { reactive, shallowReactive } from '../src/reactive';
 
 describe('effect', () => {
 
@@ -260,6 +260,38 @@ describe('effect', () => {
 
         expect(fn).toBeCalledTimes(2)
 
+    });
+
+    it('深响应', () => {
+        const obj = reactive({ foo: { bar: 1 } })
+
+        const fn = vi.fn(() => {
+            obj.foo.bar
+        })
+
+        effect(fn)
+
+        obj.foo.bar = 2
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('浅响应', () => {
+        const obj = shallowReactive({ foo: { bar: 1 } })
+
+        const fn = vi.fn(() => {
+            obj.foo.bar
+        })
+
+        effect(fn)
+
+        obj.foo = { bar: 2 }
+
+        expect(fn).toBeCalledTimes(2)
+
+        obj.foo.bar = 3
+
+        expect(fn).toBeCalledTimes(2)
     });
 
 
