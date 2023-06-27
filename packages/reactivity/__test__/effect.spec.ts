@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect } from '../src/effect';
-import { reactive, shallowReactive } from '../src/reactive';
+import { isReadOnly, reactive, readonly, shallowReactive, shallowReadonly } from '../src/reactive';
 
 describe('effect', () => {
 
@@ -292,6 +292,48 @@ describe('effect', () => {
         obj.foo.bar = 3
 
         expect(fn).toBeCalledTimes(2)
+    });
+
+    it('浅只读', () => {
+        const obj = shallowReadonly({ foo: { bar: 1 } })
+
+        const fn = vi.fn(() => {
+            obj.foo.bar
+        })
+
+        effect(fn)
+
+        obj.foo = { bar: 3 }
+
+        // 浅层数据不可修改
+        expect(obj.foo).toStrictEqual({ bar: 1 })
+
+        obj.foo.bar = 2
+        // 深层数据可修改
+        expect(obj.foo.bar).toBe(2)
+        // 判断是否为只读数据
+        expect(isReadOnly(obj)).toBe(true)
+        // 只读数据不会触发副作用函数
+        expect(fn).toBeCalledTimes(1)
+    });
+
+    it('深只读', () => {
+        const obj = readonly({ foo: { bar: 1 } })
+
+        const fn = vi.fn(() => {
+            obj.foo.bar
+        })
+
+        effect(fn)
+
+        obj.foo.bar = 2
+
+        // 深层数据不可修改
+        expect(obj.foo.bar).toBe(1)
+        // 判断是否为只读数据
+        expect(isReadOnly(obj)).toBe(true)
+        // 只读数据不会触发副作用函数
+        expect(fn).toBeCalledTimes(1)
     });
 
 

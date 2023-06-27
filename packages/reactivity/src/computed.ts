@@ -1,4 +1,5 @@
 import { effect, track, trigger } from './effect';
+import { TriggerType } from './reactive';
 
 function computed(getter: Function) {
     // value 用来存储上一次计算的值
@@ -15,7 +16,8 @@ function computed(getter: Function) {
             if (!dirty) {
                 dirty = true
                 // 当计算属性依赖的响应式数据发生变化时， 手动调用 trigger 函数触发响应
-                trigger(obj, 'value')
+                // 由于计算属性不存在添加属性和删除属性的情况发生, 所以默认类型为 SET
+                trigger(obj, 'value', TriggerType.SET)
             }
         }
     })
