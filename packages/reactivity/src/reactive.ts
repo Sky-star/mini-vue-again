@@ -64,9 +64,9 @@ function createReactive(data: any, isShallow = false, isReadonly = false) {
             const res = Reflect.get(target, key, receiver)
             // 将 副作用函数 activeEffect 存储到容器当中
             // 非只读的时候才需要建立响应联系
-            // if (!isReadOnly) {
-            track(target, key)
-            // }
+            if (!isReadonly) {
+                track(target, key)
+            }
 
             // 如果是浅响应
             if (isShallow) {
