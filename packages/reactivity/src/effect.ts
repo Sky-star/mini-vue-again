@@ -106,7 +106,7 @@ function track(target, key) {
 
 
 // 依赖触发
-function trigger(target, key, type) {
+function trigger(target, key, type, newVal = undefined) {
 
     // 根据 target 从容器中取得depsMap
     const depsMap = bucket.get(target)
@@ -128,6 +128,33 @@ function trigger(target, key, type) {
             effectsToRun.add(effectFn)
         }
     })
+
+    // 当操作类型为 ADD 并且目标对象是数组时，应该取出并执行那些与 length 属性相关联的副作用函数
+    if (type === TriggerType.ADD && Array.isArray(target)) {
+        // 取出与 length 相关联的副作用函数
+        const lengthEffects = depsMap.get('length')
+
+        lengthEffects && lengthEffects.forEach(effectFn => {
+            if (effectFn !== activeEffect) {
+                effectsToRun.add(effectFn)
+            }
+        });
+    }
+
+    // 如果操作目标是数组， 并修改了数组的 length 属性
+    if (Array.isArray(target) && key === 'length') {
+        // 对于索引大于或等于新的 length 值的元素
+        // 需要把所有相关联的副作用喊函数取出并添加到 effectsToRun 中 待执行
+        depsMap.forEach((effects, key) => {
+            if (key >= Number(newVal)) {
+                effects.forEach(effectFn => {
+                    if (effectFn !== activeEffect) {
+                        effectsToRun.add(effectFn)
+                    }
+                });
+            }
+        });
+    }
 
     // 只有当操作类型为 ADD 或 DELETE 时，才会触发与 ITERATE_KEY 相关联的副作用函数
     if (type === TriggerType.ADD || type === TriggerType.DELETE) {

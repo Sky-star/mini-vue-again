@@ -89,8 +89,12 @@ function createReactive(data: any, isShallow = false, isReadonly = false) {
             }
             // 先获取旧值
             const oldValue = target[key];
-            // 如果属性不存在， 则说明添加新属性， 否则是设置已有属性
-            const type = Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.SET : TriggerType.ADD;
+            // 如果代理目标时数组， 则检测被设置的索引值是否小于数组长度,
+            // 如果是，则视作 SET 操作， 否则是 ADD 操作
+            // 如果属性不存在，则说明是在添加新的属性，否者是设置已有属性
+            const type = Array.isArray(target)
+                ? Number(key) < target.length ? TriggerType.SET : TriggerType.ADD
+                : Object.prototype.hasOwnProperty.call(target, key) ? TriggerType.SET : TriggerType.ADD;
             // 设置属性值
             const res = Reflect.set(target, key, newValue, receiver);
             // 只有当 receiver 是 target 的代理对象时才进行响应(原型继承的问题)
@@ -98,7 +102,7 @@ function createReactive(data: any, isShallow = false, isReadonly = false) {
                 // 如果值发生了变化再触发响应，并且需要处理下 NaN 的问题
                 if (newValue !== oldValue && (oldValue === oldValue || newValue === newValue)) {
                     // 将副作用函数从容器中取出并执行
-                    trigger(target, key, type);
+                    trigger(target, key, type, newValue);
                 }
             }
 

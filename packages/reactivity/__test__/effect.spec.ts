@@ -336,5 +336,38 @@ describe('effect', () => {
         expect(fn).toBeCalledTimes(1)
     });
 
+    it('响应与数组长度的变化', () => {
+        const arr = reactive(['foo'])
+
+        const fn = vi.fn(() => {
+            arr.length
+        })
+
+        effect(fn)
+
+        arr[1] = 'bar'
+
+        expect(arr.length).toBe(2)
+        expect(fn).toBeCalledTimes(2)
+
+        arr[0] = 'food'
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('修改数组长度会导致响应', () => {
+        const arr = reactive(['foo'])
+
+        const fn = vi.fn(() => {
+            arr[0]
+        })
+
+        effect(fn)
+
+        arr.length = 0
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
 
 });
