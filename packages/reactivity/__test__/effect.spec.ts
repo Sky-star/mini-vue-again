@@ -345,13 +345,13 @@ describe('effect', () => {
 
         effect(fn)
 
+        // 隐式修改数组的长度能够响应
         arr[1] = 'bar'
-
         expect(arr.length).toBe(2)
         expect(fn).toBeCalledTimes(2)
 
+        // 未修改数组长度则不会响应
         arr[0] = 'food'
-
         expect(fn).toBeCalledTimes(2)
     });
 
@@ -364,9 +364,52 @@ describe('effect', () => {
 
         effect(fn)
 
+        // 修改数组长度不影响原先的元素则不会触发响应
+        arr.length = 3
+        expect(fn).toBeCalledTimes(1)
+
+        // 显示修改数组长度小于原来的长度会导致元素发生变化,触发响应
         arr.length = 0
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
+    it('数组的查找方法-原始值', () => {
+        const arr = reactive([1, 2])
+
+        const fn = vi.fn(() => {
+            arr.includes(1)
+        })
+
+        effect(fn)
+
+        arr[0] = 3
 
         expect(fn).toBeCalledTimes(2)
+    });
+
+
+    it('数组的查找方法-对象', () => {
+        const obj = {}
+        const arr = reactive([obj])
+
+        const res1 = arr.includes(arr[0])
+        const res2 = arr.includes(obj)
+
+        expect(res1).toBe(true)
+        expect(res2).toBe(true)
+
+        const res3 = arr.indexOf(arr[0])
+        const res4 = arr.indexOf(obj)
+
+        expect(res3).toBe(0)
+        expect(res4).toBe(0)
+
+        const res5 = arr.lastIndexOf(arr[0])
+        const res6 = arr.lastIndexOf(obj)
+
+        expect(res5).toBe(0)
+        expect(res6).toBe(0)
     });
 
 

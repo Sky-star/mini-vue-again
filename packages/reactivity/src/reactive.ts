@@ -15,9 +15,21 @@ const ReactiveFlags = {
     IS_READONLY: '__v_isReadonly',
 }
 
+// 定义一个 Map 实例，存储原始对象与代理对象的映射
+const reactiveMap = new Map()
 
 function reactive(data) {
-    return createReactive(data);
+    // 优先通过原始对象 data 寻找之前创建的代理对象， 如果找到了，直接返回已有的代理对象
+    const existProxy = reactiveMap.get(data)
+    if (existProxy) return existProxy
+
+    // 否则， 创建新的代理对象
+    const proxy = createReactive(data);
+
+    // 存储到 Map 中，从而避免重复创建
+    reactiveMap.set(data, proxy)
+
+    return proxy
 }
 
 function shallowReactive(data) {
@@ -40,6 +52,25 @@ function isReactive(obj) {
     return !!obj[ReactiveFlags.IS_REACTIVE]
 }
 
+const arrayInstrumentations = {};
+
+['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
+    const originMethod = Array.prototype[method]
+
+    arrayInstrumentations[method] = function (...args) {
+        // this 是代理对象， 先在代理对象中查找，将结果存储到 res 中
+        let res = originMethod.apply(this, args)
+
+        if (res === false || res === -1) {
+            // res 为 false 说明为找到， 通过this.RAW_kEY拿到原始数组，再去其中查找并更新 res 值
+            res = originMethod.apply(this[RAW_KEY], args)
+        }
+
+        // 返回最终结果
+        return res
+    }
+})
+
 // 封装 createReactive 函数 
 // 接收一个参数 isShallow, 代表是否为浅响应， 默认为 false, 即非浅响应
 // 接收一个参数 isReadonly, 代表是否为只读， 默认为 false, 即非只读
@@ -60,11 +91,18 @@ function createReactive(data: any, isShallow = false, isReadonly = false) {
                 return !isReadonly
             }
 
+            // 如果操作的目标对象是数组，并且 key 存在于 arrayInstrumentations 上，
+            // 那么返回定义在arrayInstrumentations 上的值
+            if (Array.isArray(target) && arrayInstrumentations.hasOwnProperty(key)) {
+                return Reflect.get(arrayInstrumentations, key, receiver)
+            }
+
             // 得到原始值结果
             const res = Reflect.get(target, key, receiver)
             // 将 副作用函数 activeEffect 存储到容器当中
             // 非只读的时候才需要建立响应联系
-            if (!isReadonly) {
+            // 如果 key 的类型是 symbol， 则不进行追踪
+            if (!isReadonly && typeof key !== 'symbol') {
                 track(target, key)
             }
 
