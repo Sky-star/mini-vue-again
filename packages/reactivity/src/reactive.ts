@@ -55,6 +55,7 @@ function isReactive(obj) {
 const arrayInstrumentations = {};
 
 ['includes', 'indexOf', 'lastIndexOf'].forEach(method => {
+    // 取得原始方法
     const originMethod = Array.prototype[method]
 
     arrayInstrumentations[method] = function (...args) {
@@ -66,6 +67,26 @@ const arrayInstrumentations = {};
             res = originMethod.apply(this[RAW_KEY], args)
         }
 
+        // 返回最终结果
+        return res
+    }
+})
+
+// 一个标记变量，代表是否进行追踪。默认值为 true，即允许追踪
+let shouldTrack = true;
+
+//  重写数组的 push、pop、shift、unshift以及splice方法
+['push', 'pop', 'shift', 'unshift', 'splice'].forEach(method => {
+    // 取得原始方法
+    const originMethod = Array.prototype[method]
+    // 重写
+    arrayInstrumentations[method] = function (...args) {
+        // 在调用原始方法之前禁止追踪
+        shouldTrack = false
+        // 原始方法的默认行为
+        let res = originMethod.apply(this, args)
+        // 在调用原始方法之后，恢复原来的行为，即允许追踪
+        shouldTrack = true
         // 返回最终结果
         return res
     }
@@ -183,4 +204,4 @@ function createReactive(data: any, isShallow = false, isReadonly = false) {
 }
 
 
-export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadOnly, ITERATE_KEY, TriggerType, ReactiveFlags }
+export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadOnly, ITERATE_KEY, TriggerType, ReactiveFlags, shouldTrack }

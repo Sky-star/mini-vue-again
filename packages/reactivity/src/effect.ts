@@ -15,7 +15,7 @@
 //    引出 scheduler 的实现
 // 8. 设计懒执行的 effect 模式，为了方便某些情境下的需求(computed)
 
-import { ITERATE_KEY, TriggerType } from "./reactive"
+import { ITERATE_KEY, TriggerType, shouldTrack } from "./reactive"
 
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
@@ -77,8 +77,8 @@ function cleanup(effectFn) {
 
 // 依赖收集
 function track(target, key) {
-    // 没有 activeEffect 直接 return
-    if (!activeEffect) return
+    // 没有 activeEffect 或者 不允许追踪 直接 return
+    if (!activeEffect || !shouldTrack) return
 
     // 从容器中取得 depsMap, 它是一个Map类型: key -> effects
     let depsMap = bucket.get(target)

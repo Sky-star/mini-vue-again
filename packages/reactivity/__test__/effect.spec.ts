@@ -376,16 +376,20 @@ describe('effect', () => {
 
     it('数组的查找方法-原始值', () => {
         const arr = reactive([1, 2])
-
+        let res
         const fn = vi.fn(() => {
-            arr.includes(1)
+            res = arr.includes(1)
         })
 
         effect(fn)
 
-        arr[0] = 3
+        // 原始值通过代理对象的includes能够正确响应
+        expect(res).toBe(true)
 
-        expect(fn).toBeCalledTimes(2)
+        arr[0] = 3
+        // 修改原数组后，应为 false
+        expect(res).toBe(false)
+
     });
 
 
@@ -396,7 +400,9 @@ describe('effect', () => {
         const res1 = arr.includes(arr[0])
         const res2 = arr.includes(obj)
 
+        // 查找代理对象中的响应式对象
         expect(res1).toBe(true)
+        // 查找代理对象中的原始对象
         expect(res2).toBe(true)
 
         const res3 = arr.indexOf(arr[0])
@@ -410,6 +416,26 @@ describe('effect', () => {
 
         expect(res5).toBe(0)
         expect(res6).toBe(0)
+    });
+
+    it('隐式修改数组长度的原型方法', () => {
+        const arr = reactive([])
+
+        const fn = vi.fn(() => {
+            arr.push(1)
+        })
+
+        // 第一个副作用函数
+        effect(fn)
+
+        // 第二个副作用函数
+        effect(fn)
+
+        // 由于push这类隐式修改数组长度的方法，会间接的读取和设置数组的length属性值
+        // 语义上是修改，不应读取，所以不应该响应
+        expect(arr).toEqual([1, 1])
+        expect(fn).toBeCalledTimes(2)
+
     });
 
 
