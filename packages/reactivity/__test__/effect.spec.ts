@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect } from '../src/effect';
-import { isReadOnly, reactive, readonly, shallowReactive, shallowReadonly } from '../src/reactive';
+import { isReadonly, reactive, readonly, shallowReactive, shallowReadonly } from '../src/reactive';
 
 describe('effect', () => {
 
@@ -312,7 +312,7 @@ describe('effect', () => {
         // 深层数据可修改
         expect(obj.foo.bar).toBe(2)
         // 判断是否为只读数据
-        expect(isReadOnly(obj)).toBe(true)
+        expect(isReadonly(obj)).toBe(true)
         // 只读数据不会触发副作用函数
         expect(fn).toBeCalledTimes(1)
     });
@@ -331,7 +331,7 @@ describe('effect', () => {
         // 深层数据不可修改
         expect(obj.foo.bar).toBe(1)
         // 判断是否为只读数据
-        expect(isReadOnly(obj)).toBe(true)
+        expect(isReadonly(obj)).toBe(true)
         // 只读数据不会触发副作用函数
         expect(fn).toBeCalledTimes(1)
     });
@@ -438,5 +438,19 @@ describe('effect', () => {
 
     });
 
-
 });
+
+// describe('代理Set和Map', () => {
+//     it('代理对象访问Set属性', () => {
+//         const s = new Set([1, 2, 3])
+//         const p = reactive(s)
+
+//         // 代理对象能够访问属性
+//         expect(p.size).toBe(3)
+
+//         // 代理对象能够调用方法
+//         p.delete(1)
+//         expect(p.size).toBe(2)
+
+//     });
+// });

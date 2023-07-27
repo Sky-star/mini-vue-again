@@ -15,7 +15,7 @@
 //    引出 scheduler 的实现
 // 8. 设计懒执行的 effect 模式，为了方便某些情境下的需求(computed)
 
-import { ITERATE_KEY, TriggerType, shouldTrack } from "./reactive"
+import { ITERATE_KEY, TriggerType } from "./reactive"
 
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
@@ -176,4 +176,14 @@ function trigger(target, key, type, newVal = undefined) {
     })
 }
 
-export { trigger, track, effect }
+let shouldTrack = true
+
+function pauseTracking() {
+    shouldTrack = false
+}
+
+function enableTracking() {
+    shouldTrack = true
+}
+
+export { trigger, track, effect, pauseTracking, enableTracking }
