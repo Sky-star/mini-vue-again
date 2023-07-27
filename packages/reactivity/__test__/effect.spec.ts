@@ -440,17 +440,29 @@ describe('effect', () => {
 
 });
 
-// describe('代理Set和Map', () => {
-//     it('代理对象访问Set属性', () => {
-//         const s = new Set([1, 2, 3])
-//         const p = reactive(s)
+describe('代理Set和Map', () => {
+    it('代理对象访问Set属性', () => {
+        const s = new Set([1, 2, 3])
+        const p = reactive(s)
 
-//         // 代理对象能够访问属性
-//         expect(p.size).toBe(3)
+        // 代理对象能够访问属性
+        expect(p.size).toBe(3)
 
-//         // 代理对象能够调用方法
-//         p.delete(1)
-//         expect(p.size).toBe(2)
+        // 代理对象能够调用方法
+        p.delete(1)
+        expect(p.size).toBe(2)
 
-//     });
-// });
+    });
+
+    it('代理对象访问Map属性', () => {
+        const s = new Map([['key', 1]])
+        const p = reactive(s)
+
+        // 代理对象能够访问属性
+        expect(p.size).toBe(1)
+
+        // 代理对象能够调用方法
+        p.delete('key')
+        expect(p.size).toBe(0)
+    });
+});
