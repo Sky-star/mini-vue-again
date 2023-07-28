@@ -465,4 +465,24 @@ describe('代理Set和Map', () => {
         p.delete('key')
         expect(p.size).toBe(0)
     });
+
+    it('Set的响应联系', () => {
+        const p = reactive(new Set([1, 2, 3]))
+        let size
+        const fn = vi.fn(() => {
+            size = p.size
+        })
+
+        effect(fn)
+
+        // Set中已有值则不触发响应
+        p.add(1)
+        expect(fn).toBeCalledTimes(1)
+        expect(size).toBe(3)
+
+        // Set中添加不存在的值则触发响应
+        p.add(4)
+        expect(fn).toBeCalledTimes(2)
+        expect(size).toBe(4)
+    });
 });
