@@ -1,7 +1,6 @@
 import { toRawType } from '../../shared/src/general';
 import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowReadonlyHandlers } from './baseHandlers';
-import { collectionHandlers } from './collectionHandlers';
-import { track, trigger } from './effect';
+import { mutableCollectionHandlers } from './collectionHandlers';
 
 const ITERATE_KEY = Symbol()
 
@@ -44,19 +43,19 @@ function getTargetType(target) {
 const reactiveMap = new Map()
 
 function reactive(obj) {
-    return createReactiveObject(obj, mutableHandlers, collectionHandlers);
+    return createReactiveObject(obj, mutableHandlers, mutableCollectionHandlers);
 }
 
 function shallowReactive(obj) {
-    return createReactiveObject(obj, shallowReactiveHandlers, collectionHandlers)
+    return createReactiveObject(obj, shallowReactiveHandlers, mutableCollectionHandlers)
 }
 
 function readonly(obj) {
-    return createReactiveObject(obj, readonlyHandlers, collectionHandlers)
+    return createReactiveObject(obj, readonlyHandlers, mutableCollectionHandlers)
 }
 
 function shallowReadonly(obj) {
-    return createReactiveObject(obj, shallowReadonlyHandlers, collectionHandlers)
+    return createReactiveObject(obj, shallowReadonlyHandlers, mutableCollectionHandlers)
 }
 
 function createReactiveObject(target, baseHandlers, collectionHandlers) {
@@ -88,4 +87,9 @@ function isReactive(obj) {
     return !!obj[ReactiveFlags.IS_REACTIVE]
 }
 
-export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, TriggerType, ReactiveFlags }
+function toRaw(observed) {
+    const raw = observed && observed[ReactiveFlags.RAW]
+    return raw ? toRaw(raw) : observed
+}
+
+export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, TriggerType, ReactiveFlags, toRaw }

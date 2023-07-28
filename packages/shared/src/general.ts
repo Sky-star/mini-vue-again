@@ -6,3 +6,9 @@ export const toTypeString = (value: unknown): string => objectToString.call(valu
 export const toRawType = (value: unknown): string => {
     return toTypeString(value).slice(8, -1)
 }
+
+const hasOwnProperty = Object.prototype.hasOwnProperty
+export const hasOwn = (
+    val: object,
+    key: string | symbol
+): key is keyof typeof val => hasOwnProperty.call(val, key) 
