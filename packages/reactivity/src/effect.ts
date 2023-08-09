@@ -15,6 +15,7 @@
 //    引出 scheduler 的实现
 // 8. 设计懒执行的 effect 模式，为了方便某些情境下的需求(computed)
 
+import { toRawType } from "../../shared/src/general"
 import { ITERATE_KEY, TriggerType } from "./reactive"
 
 // 用一个全局变量存储被注册的副作用函数
@@ -156,8 +157,13 @@ function trigger(target, key, type, newVal = undefined) {
         });
     }
 
-    // 只有当操作类型为 ADD 或 DELETE 时，才会触发与 ITERATE_KEY 相关联的副作用函数
-    if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+    // 当操作类型为 ADD 或 DELETE 时，才会触发与 ITERATE_KEY 相关联的副作用函数
+    // 比较特殊的情况就是集合类型 例如 Map、Set 类型也需要触发副作用函数
+    if (
+        type === TriggerType.ADD ||
+        type === TriggerType.DELETE ||
+        (type === TriggerType.SET && toRawType(target) === 'Map')
+    ) {
         // 将与 ITERATE_KEY 相关联的副作用函数添加到 effectToRun
         iterateEffects && iterateEffects.forEach(effectFn => {
             if (effectFn !== activeEffect) {

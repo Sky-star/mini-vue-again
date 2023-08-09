@@ -76,6 +76,25 @@ function set(key, value) {
     }
 }
 
+function createForEach(isReadonly, isShallow) {
+    return function forEach(callback, thisArg) {
+        // wrap 函数可以用来把可代理的值转换为响应式数据
+        const wrap = (val) => {
+            return typeof val === 'object' ? reactive(val) : val
+        }
+        // 获取原始数据对象
+        const target = this[ReactiveFlags.RAW]
+        // 与 ITERATE_KEY 建立响应联系
+        track(target, ITERATE_KEY)
+        // 通过原始数据对象调用 forEach方法
+        target.forEach((v, k) => {
+            // 通过 .call 调用 callback, 并传递 thisArg
+            callback.call(thisArg, wrap(v), wrap(k), this)
+        })
+    }
+}
+
+
 const [mutableInstrumentations] = createInstrumentations()
 
 function createInstrumentations() {
@@ -87,6 +106,7 @@ function createInstrumentations() {
         set,
         add,
         delete: deleteEntry,
+        forEach: createForEach(false, false)
     }
 
     return [mutableInstrumentations]

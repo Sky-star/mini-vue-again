@@ -524,4 +524,65 @@ describe('代理Set和Map', () => {
         expect(fn).toBeCalledTimes(1)
 
     });
+
+    it('集合类型响应forEach方法', () => {
+        const m = reactive(new Map([[{ key: 1 }, { value: 1 }]]))
+
+        let key, value
+        const fn = vi.fn(() => {
+            m.forEach(function (v, k, m) {
+                k
+                v
+            })
+        })
+
+        effect(fn)
+
+        m.set({ key: 2 }, { value: 2 })
+
+        console.log(key, value);
+
+
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
+    it('集合类型forEach回调函数参数响应', () => {
+        const key = { key: 1 }
+        const value = new Set([1, 2, 3])
+
+        const p = reactive(new Map([[key, value]]))
+
+        const fn = vi.fn(() => {
+            p.forEach(function (v, k) {
+                v
+                k
+            })
+        })
+        effect(fn)
+
+        p.get(key).delete(1)
+
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
+    it('集合类型forEach响应SET类型操作', () => {
+        const p = reactive(new Map([["key", 1]]))
+
+        const fn = vi.fn(() => {
+            // forEach 循环不仅关心集合的键，还关心集合的值
+            p.forEach(function (value, key) {
+                value // 1
+            })
+        })
+
+        effect(fn)
+
+        p.set("key", 2) // 即使操作类型时 SET，也应该触发响应
+
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
 });
