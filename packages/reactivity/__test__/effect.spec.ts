@@ -540,9 +540,6 @@ describe('代理Set和Map', () => {
 
         m.set({ key: 2 }, { value: 2 })
 
-        console.log(key, value);
-
-
         expect(fn).toBeCalledTimes(2)
 
     });
@@ -555,8 +552,7 @@ describe('代理Set和Map', () => {
 
         const fn = vi.fn(() => {
             p.forEach(function (v, k) {
-                v
-                k
+                v.size
             })
         })
         effect(fn)
