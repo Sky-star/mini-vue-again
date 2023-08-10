@@ -1,6 +1,6 @@
 import { hasOwn } from '../../shared/src/general';
 import { track, trigger } from './effect';
-import { ITERATE_KEY, ReactiveFlags, TriggerType, reactive, toRaw } from './reactive';
+import { ITERATE_KEY, MAP_KEY_ITERATE_KEY, ReactiveFlags, TriggerType, reactive, toRaw } from './reactive';
 
 function get(key) {
     // 获取原始对象
@@ -127,6 +127,69 @@ function iterationMethod() {
     }
 }
 
+function valuesIterationMethod() {
+    // 获取原始数据对象
+    const target = this[ReactiveFlags.RAW]
+    // 获取原始迭代器方法
+    const itr = target.values()
+
+    const wrap = (val) => typeof val === 'object' && val !== null ? reactive(val) : val
+
+    // 调用 track 函数建立响应联系
+    track(target, ITERATE_KEY)
+
+    // 返回自定义迭代器
+    return {
+        // 实现迭代器协议
+        next() {
+            // 调用原始迭代器的 next 方法获取 value 和 done
+            const { value, done } = itr.next()
+
+            return {
+                // value 是值， 而非键值对， 所以只需要包裹 value 即可
+                value: wrap(value),
+                done
+            }
+        },
+
+        // 实现可迭代协议
+        [Symbol.iterator]() {
+            return this
+        }
+    }
+}
+
+function keysIterationMethod() {
+    // 获取原始数据对象
+    const target = this[ReactiveFlags.RAW]
+    // 获取原始迭代器方法
+    const itr = target.keys()
+
+    const wrap = (val) => typeof val === 'object' && val !== null ? reactive(val) : val
+
+    // 调用 track 函数建立响应联系
+    track(target, MAP_KEY_ITERATE_KEY)
+
+    // 返回自定义迭代器
+    return {
+        // 实现迭代器协议
+        next() {
+            // 调用原始迭代器的 next 方法获取 value 和 done
+            const { value, done } = itr.next()
+
+            return {
+                // value 是值， 而非键值对， 所以只需要包裹 value 即可
+                value: wrap(value),
+                done
+            }
+        },
+
+        // 实现可迭代协议
+        [Symbol.iterator]() {
+            return this
+        }
+    }
+}
 
 const [mutableInstrumentations] = createInstrumentations()
 
@@ -141,7 +204,9 @@ function createInstrumentations() {
         delete: deleteEntry,
         forEach: createForEach(false, false),
         [Symbol.iterator]: iterationMethod,
-        entries: iterationMethod
+        entries: iterationMethod,
+        values: valuesIterationMethod,
+        keys: keysIterationMethod,
     }
 
     return [mutableInstrumentations]

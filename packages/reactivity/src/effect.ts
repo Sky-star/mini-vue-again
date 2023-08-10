@@ -16,7 +16,7 @@
 // 8. 设计懒执行的 effect 模式，为了方便某些情境下的需求(computed)
 
 import { toRawType } from "../../shared/src/general"
-import { ITERATE_KEY, TriggerType } from "./reactive"
+import { ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType } from "./reactive"
 
 // 用一个全局变量存储被注册的副作用函数
 let activeEffect
@@ -171,6 +171,23 @@ function trigger(target, key, type, newVal = undefined) {
             }
         })
     }
+
+    if (
+        // 操作类型为 ADD 或 DELETE
+        (type === "ADD" || type === "DELETE") &&
+        // 并且是 Map 类型的数据
+        toRawType(target) === 'Map'
+    ) {
+        // 则取出那些与 MAP_KEY_ITERATE_KEY 相关联的副作用函数并执行
+        const iterateEffects = depsMap.get(MAP_KEY_ITERATE_KEY)
+        iterateEffects &&
+            iterateEffects.forEach(effectFn => {
+                if (effectFn !== activeEffect) {
+                    effectsToRun.add(effectFn)
+                }
+            })
+    }
+
 
     // 执行副作用函数
     effectsToRun.forEach(effectFn => {

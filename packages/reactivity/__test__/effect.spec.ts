@@ -641,4 +641,51 @@ describe('代理Set和Map', () => {
         expect(isReactive(v)).toBe(true)
     });
 
+    it('集合类型forOf循环中values方法响应', () => {
+
+        const p = reactive(
+            new Map([
+                ["key1", "value1"],
+                ["key2", "value2"]
+            ])
+        )
+
+        const fn = vi.fn(() => {
+            for (const value of p.values()) {
+
+            }
+        })
+
+        effect(fn)
+
+        p.set("key3", "value3") // 能够触发响应
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('集合类型forOf循环中keys方法能够正确响应', () => {
+        const p = reactive(
+            new Map([
+                ["key1", "value1"],
+                ["key2", "value2"]
+            ])
+        )
+
+        const fn = vi.fn(() => {
+            for (const value of p.keys()) {
+            }
+        })
+
+        effect(fn)
+
+        // 不会触发响应
+        p.set("key2", "value3")
+        expect(fn).toBeCalledTimes(1)
+
+        // 能够触发响应
+        p.set("key3", "value3")
+        expect(fn).toBeCalledTimes(2)
+
+    });
+
 });

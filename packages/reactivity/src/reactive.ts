@@ -3,6 +3,7 @@ import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowRead
 import { mutableCollectionHandlers } from './collectionHandlers';
 
 const ITERATE_KEY = Symbol()
+const MAP_KEY_ITERATE_KEY = Symbol()
 
 const TriggerType = {
     SET: 'SET',
@@ -92,4 +93,4 @@ function toRaw(observed) {
     return raw ? toRaw(raw) : observed
 }
 
-export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, TriggerType, ReactiveFlags, toRaw }
+export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType, ReactiveFlags, toRaw }
