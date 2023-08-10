@@ -95,6 +95,39 @@ function createForEach(isReadonly, isShallow) {
 }
 
 
+function iterationMethod() {
+    // 获取原始数据对象
+    const target = this[ReactiveFlags.RAW]
+    // 获取原始迭代器方法
+    const itr = target[Symbol.iterator]()
+
+    const wrap = (val) => typeof val === 'object' && val !== null ? reactive(val) : val
+
+    // 调用 track 函数建立响应联系
+    track(target, ITERATE_KEY)
+
+    // 返回自定义迭代器
+    return {
+        // 实现迭代器协议
+        next() {
+            // 调用原始迭代器的 next 方法获取 value 和 done
+            const { value, done } = itr.next()
+
+            return {
+                // 如果 value 不是 undefined， 则对其进行包裹
+                value: value ? [wrap(value[0]), wrap(value[1])] : value,
+                done
+            }
+        },
+
+        // 实现可迭代协议
+        [Symbol.iterator]() {
+            return this
+        }
+    }
+}
+
+
 const [mutableInstrumentations] = createInstrumentations()
 
 function createInstrumentations() {
@@ -106,7 +139,9 @@ function createInstrumentations() {
         set,
         add,
         delete: deleteEntry,
-        forEach: createForEach(false, false)
+        forEach: createForEach(false, false),
+        [Symbol.iterator]: iterationMethod,
+        entries: iterationMethod
     }
 
     return [mutableInstrumentations]

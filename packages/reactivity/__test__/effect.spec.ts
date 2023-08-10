@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect } from '../src/effect';
-import { isReadonly, reactive, readonly, shallowReactive, shallowReadonly } from '../src/reactive';
+import { isReactive, isReadonly, reactive, readonly, shallowReactive, shallowReadonly } from '../src/reactive';
 
 describe('effect', () => {
 
@@ -579,6 +579,66 @@ describe('代理Set和Map', () => {
 
         expect(fn).toBeCalledTimes(2)
 
+    });
+
+    it('集合类型响应forOf循环', () => {
+        const p = reactive(
+            new Map([
+                ["key1", "value1"],
+                ["key2", "value2"]
+            ])
+        )
+
+        const fn = vi.fn(() => {
+            for (const [key, value] of p) {
+            }
+        })
+
+        effect(fn)
+
+        p.set("key3", "value3") // 能够触发响应
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('集合类型entries方法响应forOf循环', () => {
+        const p = reactive(
+            new Map([
+                ["key1", "value1"],
+                ["key2", "value2"]
+            ])
+        )
+
+        const fn = vi.fn(() => {
+            for (const [key, value] of p.entries()) {
+            }
+        })
+
+        effect(fn)
+
+        p.set("key3", "value3") // 能够触发响应
+
+        expect(fn).toBeCalledTimes(2)
+    });
+
+    it('集合类型在forOf循环中的参数也是代理对象', () => {
+        const p = reactive(
+            new Map([
+                [{ "key": 1 }, { "value": 1 }],
+            ])
+        )
+
+        let k, v
+        const fn = vi.fn(() => {
+            for (const [key, value] of p) {
+                k = key, v = value
+            }
+        })
+
+        effect(fn)
+
+        expect(isReactive(k)).toBe(true)
+        expect(isReactive(v)).toBe(true)
     });
 
 });
