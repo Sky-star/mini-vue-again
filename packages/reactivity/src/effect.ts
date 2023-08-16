@@ -98,13 +98,19 @@ function track(target, key) {
         depsMap.set(key, (deps = new Set()))
     }
 
+    trackEffects(deps)
+}
+
+function trackEffects(deps) {
+
+    if (deps.has(activeEffect)) return
+
     // 最后将当前激活的副作用函数添加到集合当中, 完成最终的树形结构
     deps.add(activeEffect)
 
     // 进行反向依赖收集
     activeEffect.deps.push(deps)
 }
-
 
 // 依赖触发
 function trigger(target, key, type, newVal = undefined) {
@@ -188,9 +194,14 @@ function trigger(target, key, type, newVal = undefined) {
             })
     }
 
-
     // 执行副作用函数
-    effectsToRun.forEach(effectFn => {
+    triggerEffects(effectsToRun)
+}
+
+function triggerEffects(effectsToRun) {
+    const effects: any = new Set(effectsToRun)
+    // 执行副作用函数
+    effects.forEach(effectFn => {
         if (effectFn.options.scheduler) {
             effectFn.options.scheduler(effectFn)
         } else {
@@ -209,4 +220,8 @@ function enableTracking() {
     shouldTrack = true
 }
 
-export { trigger, track, effect, pauseTracking, enableTracking }
+function isTracking() {
+    return shouldTrack && activeEffect !== undefined
+}
+
+export { trigger, track, effect, pauseTracking, enableTracking, trackEffects, triggerEffects, isTracking }

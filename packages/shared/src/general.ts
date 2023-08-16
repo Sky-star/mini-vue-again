@@ -11,4 +11,10 @@ const hasOwnProperty = Object.prototype.hasOwnProperty
 export const hasOwn = (
     val: object,
     key: string | symbol
-): key is keyof typeof val => hasOwnProperty.call(val, key) 
+): key is keyof typeof val => hasOwnProperty.call(val, key)
+
+export const hasChanged = (val, newVal) => {
+    return !Object.is(val, newVal)
+}
+
+export const isObject = (val) => val !== null && typeof val === 'object'

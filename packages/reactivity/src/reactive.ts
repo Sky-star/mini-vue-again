@@ -1,4 +1,4 @@
-import { toRawType } from '../../shared/src/general';
+import { isObject, toRawType } from '../../shared/src/general';
 import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowReadonlyHandlers } from './baseHandlers';
 import { mutableCollectionHandlers } from './collectionHandlers';
 
@@ -93,4 +93,8 @@ function toRaw(observed) {
     return raw ? toRaw(raw) : observed
 }
 
-export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType, ReactiveFlags, toRaw }
+function toReactive(value) {
+    return isObject(value) ? reactive(value) : value
+}
+
+export { reactive, shallowReactive, readonly, shallowReadonly, isReactive, isReadonly, ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType, ReactiveFlags, toRaw, toReactive }
