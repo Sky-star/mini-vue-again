@@ -1,4 +1,12 @@
-export function createRenderer() {
+
+export function createRenderer(options) {
+    // 通过 options 配置项将目标平台的特有API抽离出去
+    const {
+        createElement,
+        insert,
+        setElementText
+    } = options
+
     // 具体的渲染动作
     function render(vnode, container) {
         if (vnode) {
@@ -16,12 +24,32 @@ export function createRenderer() {
         container._vnode = vnode
     }
 
+    // 承担着具体的渲染逻辑
+    function patch(n1, n2, container) {
+        // 如果 n1 不存在，意味着挂载， 则调用 mountElement 函数完成挂载
+        if (!n1) {
+            mountElement(n2, container)
+        } else {
+            // n1 存在，意味着打补丁，暂时省略
+        }
+    }
+
+    function mountElement(vnode: any, container: any) {
+        // 调用 createElement 函数创建元素
+        const el = createElement(vnode.type)
+
+        // 如果 children 是文字类型的值，则代表需要设置元素的文字节点
+        if (typeof vnode.children === 'string') {
+            setElementText(el, vnode.children)
+        }
+
+        // 调用 insert 函数将元素插入到容器内
+        insert(el, container)
+    }
+
     return {
         render
     }
 }
 
-function patch(_vnode: any, vnode: any, container: any) {
-    throw new Error("Function not implemented.")
-}
 
