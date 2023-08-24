@@ -41,6 +41,20 @@ export function createRenderer(options) {
         // 如果 children 是文字类型的值，则代表需要设置元素的文字节点
         if (typeof vnode.children === 'string') {
             setElementText(el, vnode.children)
+        } else if (Array.isArray(vnode.children)) {
+            // 如果 children 是数组，则遍历每一个子节点，并调用 patch 函数挂载他们
+            vnode.children.forEach(child => {
+                patch(null, child, el)
+            });
+        }
+
+        // 如果 vnode.props 存在才处理它, 即设置节点的各种属性，类似 id, class
+        if (vnode.props) {
+            // 遍历 vnode.props
+            for (const key in vnode.props) {
+                // 直接设置属性
+                el[key] = vnode.props[key]
+            }
         }
 
         // 调用 insert 函数将元素插入到容器内
