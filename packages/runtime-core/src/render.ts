@@ -4,7 +4,8 @@ export function createRenderer(options) {
     const {
         createElement,
         insert,
-        setElementText
+        setElementText,
+        patchProps,
     } = options
 
     // 具体的渲染动作
@@ -53,7 +54,7 @@ export function createRenderer(options) {
             // 遍历 vnode.props
             for (const key in vnode.props) {
                 // 直接设置属性
-                el[key] = vnode.props[key]
+                patchProps(el, null, vnode.props[key])
             }
         }
 
