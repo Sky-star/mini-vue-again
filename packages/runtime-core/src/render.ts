@@ -17,12 +17,21 @@ export function createRenderer(options) {
             if (container._vnode) {
                 // 旧 vnode 存在， 且新 vnode 不能存在， 说明是卸载 (unmount) 操作
                 // 只需要将 container 内的 DOM 清理即可
-                container.innerHTML = ''
+                unmount(container._vnode)
             }
         }
 
         // 把 vnode 存储到 container._vnode 下， 就是后续渲染中的旧 vnode
         container._vnode = vnode
+    }
+
+    // 卸载函数
+    function unmount(vnode) {
+        // 方便在内部调用相关的钩子函数
+        const parent = vnode.el.parentNode
+        if (parent) {
+            parent.removeChild(vnode.el)
+        }
     }
 
     // 承担着具体的渲染逻辑
