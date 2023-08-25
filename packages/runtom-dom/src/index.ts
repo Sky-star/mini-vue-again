@@ -1,4 +1,4 @@
-import { createRenderer } from "../../runtime-core/src/render"
+import { createRenderer } from "../../runtime-core/src/renderer"
 
 function createElement(type) {
     return document.createElement(type)
