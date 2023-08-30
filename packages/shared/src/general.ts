@@ -18,3 +18,5 @@ export const hasChanged = (val, newVal) => {
 }
 
 export const isObject = (val) => val !== null && typeof val === 'object'
+
+export const isArray = (val) => Array.isArray(val)
