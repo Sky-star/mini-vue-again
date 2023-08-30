@@ -12,6 +12,13 @@ function insert(el, parent, anchor = null) {
     parent.insertBefore(el, anchor)
 }
 
+function remove(el) {
+    const parent = el.parentNode
+    if (parent) {
+        parent.removeChild(el)
+    }
+}
+
 function shouldSetAsProps(el, key, value) {
     // 特殊处理
     if (key === "form" || el.tagName === "INPUT") return false
@@ -84,6 +91,7 @@ const renderer: any = createRenderer({
     createElement,
     patchProps,
     insert,
+    remove,
     setElementText
 })
 

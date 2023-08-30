@@ -4,6 +4,7 @@ export function createRenderer(options) {
     const {
         createElement,
         insert,
+        remove,
         setElementText,
         patchProps,
     } = options
@@ -28,10 +29,7 @@ export function createRenderer(options) {
     // 卸载函数
     function unmount(vnode) {
         // 方便在内部调用相关的钩子函数
-        const parent = vnode.el.parentNode
-        if (parent) {
-            parent.removeChild(vnode.el)
-        }
+        remove(vnode.el)
     }
 
     // 承担着具体的渲染逻辑
