@@ -1,4 +1,5 @@
 import { isArray, toRawType } from '../../shared/src/general';
+import { Fragment } from './vnode';
 
 export function createRenderer(options) {
     // 通过 options 配置项将目标平台的特有API抽离出去
@@ -32,6 +33,11 @@ export function createRenderer(options) {
 
     // 卸载函数
     function unmount(vnode) {
+        // 在卸载时， 如果卸载的 vnode 类型为 Fragment，则需要卸载其 children
+        if (vnode.type === Fragment) {
+            vnode.children.forEach((c) => unmount(c))
+            return
+        }
         // 方便在内部调用相关的钩子函数
         remove(vnode.el)
     }
@@ -86,6 +92,15 @@ export function createRenderer(options) {
                 n2.el = n1.el
             }
 
+        } else if (type == Fragment) {
+            // 处理 Fragment 类型的 vnode
+            if (!n1) {
+                // 如果旧 vnode 不存在，则只需要将 Fragment 的 children 逐个挂载即可
+                n2.children.forEach(c => patch(null, c, container))
+            } else {
+                // 如果旧 vnode 存在，则只需要更新 Fragment 的 children 即可
+                patchChildren(n1, n2, container)
+            }
         } else if (typeof type === 'object') {
             // 如果 n2.type 的值类型是对象，则它描述的是组件
         } else if (type === 'xxx') {

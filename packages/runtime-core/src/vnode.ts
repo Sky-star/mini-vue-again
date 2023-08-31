@@ -2,6 +2,8 @@
 export const Text = Symbol()
 // 注释节点类型
 export const Comment = Symbol()
+// 片段类型
+export const Fragment = Symbol()
 
 export function createVNode(type, props, children) {
     const vnode = {
