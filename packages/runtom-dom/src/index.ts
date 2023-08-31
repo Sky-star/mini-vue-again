@@ -19,6 +19,18 @@ function remove(el) {
     }
 }
 
+function createText(text) {
+    return document.createTextNode(text)
+}
+
+function createComment(text) {
+    return document.createComment(text)
+}
+
+function setText(el, text) {
+    el.nodeValue = text
+}
+
 function shouldSetAsProps(el, key, value) {
     // 特殊处理
     if (key === "form" || el.tagName === "INPUT") return false
@@ -92,7 +104,10 @@ const renderer: any = createRenderer({
     patchProps,
     insert,
     remove,
-    setElementText
+    setElementText,
+    createText,
+    setText,
+    createComment
 })
 
 export function createApp(...args) {

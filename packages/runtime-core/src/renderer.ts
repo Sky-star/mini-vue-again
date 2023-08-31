@@ -8,6 +8,9 @@ export function createRenderer(options) {
         remove,
         setElementText,
         patchProps,
+        createText,
+        setText,
+        createComment,
     } = options
 
     // 具体的渲染动作
@@ -53,6 +56,36 @@ export function createRenderer(options) {
                 // n1 存在，意味着打补丁
                 patchElement(n1, n2)
             }
+        } else if (type === Text) {
+            // 如果新 vnode 的类型是 Text, 则说明该 vnode  描述的是文本节点
+
+            // 如果没有旧节点， 则进行挂载
+            if (!n1) {
+                // 使用 createTextNode 创建文本节点
+                const el = n2.el = createText(n2.children)
+                // 将文件节点插入到容器中
+                insert(el, container)
+            } else {
+                // 如果旧 vnode 存在， 只需要使用新文本节点的文本内容更新旧文本节点即可
+                const el = n2.el = n1.el
+                if (n2.children !== n1.children) {
+                    setText(n2.children)
+                }
+            }
+        } else if (type === Comment) {
+            // 如果新 vnode 的类型是 Comment, 则说明该 vnode  描述的是注释节点
+
+            // 如果没有旧节点， 则进行挂载
+            if (!n1) {
+                // 使用 createTextNode 创建文本节点
+                const el = n2.el = createComment(n2.children)
+                // 将文件节点插入到容器中
+                insert(el, container)
+            } else {
+                // 注释节点是不支持修改注释文字的
+                n2.el = n1.el
+            }
+
         } else if (typeof type === 'object') {
             // 如果 n2.type 的值类型是对象，则它描述的是组件
         } else if (type === 'xxx') {
