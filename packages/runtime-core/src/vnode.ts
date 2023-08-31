@@ -1,3 +1,4 @@
+import { normalizeClass, isString } from '../../shared/src/index';
 // 文本节点类型
 export const Text = Symbol()
 // 注释节点类型
@@ -12,6 +13,16 @@ export function createVNode(type, props, children) {
         children,
         el: null
     }
+
+    // 对 class 进行序列化
+    if (props) {
+        // class 是关键字， 需使用别称
+        let { class: klass } = props
+        if (klass && !isString(klass)) {
+            props.class = normalizeClass(klass)
+        }
+    }
+
 
     return vnode
 }
