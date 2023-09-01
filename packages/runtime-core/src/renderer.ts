@@ -146,12 +146,31 @@ export function createRenderer(options) {
 
             // 判断旧子节点是否是一组子节点
             if (isArray(n1.children)) {
-                // 代码运行到这里，说明新旧子节点都是一组子节点，这里涉及到核心的 Diff 算法
-                // 这里先傻瓜式的让其能够正常的运行
-                // 将旧的一组子节点全部卸载
-                n1.children.forEach((c) => unmount(c))
-                // 再将新的一组子节点全部挂载到容器中
-                n2.children.forEach((c) => patch(null, c, container))
+                // 重新实现两组子节点的更新方式
+                // 新旧 children
+                const oldChildren = n1.children
+                const newChildren = n2.children
+                // 旧的一组子节点的长度
+                const oldLen = oldChildren.length
+                // 新的一组子节点的长度
+                const newLen = newChildren.length
+                // 两组子节点的公共长度，即两者中较短的那一组子节点的长度
+                const commonLength = Math.min(oldLen, newLen)
+                // 遍历 commonLength 次
+                for (let i = 0; i < commonLength; i++) {
+                    patch(oldChildren[i], newChildren[i], container)
+                }
+                // 如果 newLen > oldLen，说明有新子节点需要挂载
+                if (newLen > oldChildren) {
+                    for (let i = commonLength; i < newLen; i++) {
+                        patch(null, newChildren[i], container)
+                    }
+                } else if (oldLen > newLen) {
+                    // 如果 oldLen > newLen，说明有旧子节点需要卸载
+                    for (let i = commonLength; i < oldLen; i++) {
+                        unmount(oldChildren[i])
+                    }
+                }
             } else {
                 // 此时:
                 // 旧子节点要么就是文本子节点，要么不存在
