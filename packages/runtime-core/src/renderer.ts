@@ -154,6 +154,8 @@ export function createRenderer(options) {
                 const oldLen = oldChildren.length
                 // 新的一组子节点的长度
                 const newLen = newChildren.length
+                // 用来存储寻找过程中遇到的最大索引值
+                let lastIndex = 0
                 // 遍历新的 children
                 for (let i = 0; i < newLen; i++) {
                     const newVNode = newChildren[i];
@@ -164,6 +166,14 @@ export function createRenderer(options) {
                         // 但仍然需要调用 patch 函数更新
                         if (newVNode.key === oldVNode.key) {
                             patch(oldVNode, newVNode, container)
+                            if (j < lastIndex) {
+                                // 如果当前找到的节点在旧 children 中的索引小于最大索引值 lastIndex
+                                // 说明该节点对应的真实 DOM 需要移动
+                            } else {
+                                // 如果当前找到的节点在旧 children 中的索引不小于最大索引值，
+                                // 则更新 lastIndex 的值
+                                lastIndex = j
+                            }
                             break // 这里需要 break
                         }
                     }
