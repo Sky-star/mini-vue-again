@@ -154,21 +154,18 @@ export function createRenderer(options) {
                 const oldLen = oldChildren.length
                 // 新的一组子节点的长度
                 const newLen = newChildren.length
-                // 两组子节点的公共长度，即两者中较短的那一组子节点的长度
-                const commonLength = Math.min(oldLen, newLen)
-                // 遍历 commonLength 次
-                for (let i = 0; i < commonLength; i++) {
-                    patch(oldChildren[i], newChildren[i], container)
-                }
-                // 如果 newLen > oldLen，说明有新子节点需要挂载
-                if (newLen > oldChildren) {
-                    for (let i = commonLength; i < newLen; i++) {
-                        patch(null, newChildren[i], container)
-                    }
-                } else if (oldLen > newLen) {
-                    // 如果 oldLen > newLen，说明有旧子节点需要卸载
-                    for (let i = commonLength; i < oldLen; i++) {
-                        unmount(oldChildren[i])
+                // 遍历新的 children
+                for (let i = 0; i < newLen; i++) {
+                    const newVNode = newChildren[i];
+                    // 遍历旧的 children
+                    for (let j = 0; j < oldLen; j++) {
+                        const oldVNode = oldChildren[j];
+                        // 如果找到了具有相同key值的两个节点，说明可以复用
+                        // 但仍然需要调用 patch 函数更新
+                        if (newVNode.key === oldVNode.key) {
+                            patch(oldVNode, newVNode, container)
+                            break // 这里需要 break
+                        }
                     }
                 }
             } else {
