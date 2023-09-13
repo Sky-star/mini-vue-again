@@ -215,6 +215,20 @@ export function createRenderer(options) {
                     }
 
                 }
+
+                // 上一步的更新操作完成后
+                // 遍历旧的一组子节点
+                for (let i = 0; i < oldChildren.length; i++) {
+                    const oldVNode = oldChildren[i]
+                    // 拿旧子节点 oldVNode 取新的一组子节点中寻找具有相同 key 值的节点
+                    const has = newChildren.find((vnode) => vnode.key === oldVNode.key)
+
+                    if (!has) {
+                        // 如果没有找到具有相同 key 值的节点，则说明需要删除节点
+                        // 调用 unmount 函数将其卸载
+                        unmount(oldVNode)
+                    }
+                }
             } else {
                 // 此时:
                 // 旧子节点要么就是文本子节点，要么不存在
