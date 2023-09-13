@@ -75,7 +75,7 @@ export function createRenderer(options) {
                 // 如果旧 vnode 存在， 只需要使用新文本节点的文本内容更新旧文本节点即可
                 const el = n2.el = n1.el
                 if (n2.children !== n1.children) {
-                    setText(n2.children)
+                    setText(el, n2.children)
                 }
             }
         } else if (type === Comment) {
