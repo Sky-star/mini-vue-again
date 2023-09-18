@@ -149,6 +149,12 @@ export function createRenderer(options) {
                 // 封装 patchKeyedChildren 函数处理两组子节点
                 // 使用双端 Diff 算法
                 patchKeyedChildren(n1, n2, container)
+            } else {
+                // 此时：
+                // 旧子节点要么就是文本子节点，要么不存在
+                // 但不论那种情况，我们都只需要将容器清空，然后将新的一组子节点逐个挂载
+                setElementText(container, "")
+                n2.children.forEach((c) => patch(null, c, container))
             }
         } else {
             // 代码运行这里, 说明新子节点不存在
