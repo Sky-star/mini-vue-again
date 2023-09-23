@@ -187,7 +187,13 @@ export function createRenderer(options) {
         let newEndVNode = newChildren[newEndIdx]
 
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if (oldStartVNode.key === newStartVNode.key) {
+            // 增加两个判断分支， 如果头尾节点为 undefined,则说明该节点已经被处理过了
+            // 直接跳到下一个位置
+            if (!oldStartVNode) {
+                oldStartVNode = oldChildren[++oldStartIdx]
+            } else if (!oldEndVNode) {
+                oldEndVNode = oldChildren[--oldEndIdx]
+            } else if (oldStartVNode.key === newStartVNode.key) {
                 // 第一步： oldStartVNode 和 newStartVNode 比较
                 // 调用 patch 函数在 oldStartVNode 与 newStartVNode 之间打补丁
                 patch(oldStartVNode, newStartVNode, container)
@@ -205,7 +211,7 @@ export function createRenderer(options) {
                 // 第三步： oldStartVNode 和 newEndVNode 比较
                 // 调用 patch 函数 在 oldStartVNode 和 newEndVNode 之间打补丁
                 patch(oldStartVNode, newEndVNode, container)
-                // 将旧的一组子节点的头部节点对应的这是DOM节点 oldStartVNode.el 移动到
+                // 将旧的一组子节点的头部节点对应的真实 DOM 节点 oldStartVNode.el 移动到
                 // 旧的一组子节点的尾部节点对应的真实DOM节点后面
                 insert(oldStartVNode.el, container, oldEndVNode.el.nextSibling)
                 // 更新相关索引到下一个位置
@@ -216,12 +222,33 @@ export function createRenderer(options) {
                 // 仍然需要调用 patch 函数 进行打补丁
                 patch(oldEndVNode, newStartVNode, container)
                 // 移动 DOM 操作
-                // oldEndVNode.el 移动到 oldStartVNode.el
+                // oldEndVNode.el 移动到 oldStartVNode.el前面
                 insert(oldEndVNode.el, container, oldStartVNode.el)
 
                 // 移动 DOM 完成后，更新索引值，指向下一个位置
                 oldEndVNode = oldChildren[--oldEndIdx]
                 newStartVNode = newChildren[++newStartIdx]
+            } else {
+                // 遍历旧的一组子节点，试图寻找与 newStartVNode 拥有相同的key值的节点
+                // idxInOld 就是新的一组子节点的头部节点在旧的一组子节点中的索引
+                const idxInOld = oldChildren.findIndex(
+                    node => node.key === newStartVNode.key
+                )
+
+                // idxInOld 大于 0， 说明找到了可复用的节点，并需要将其对应的真实DOM节点移动到头部
+                if (idxInOld > 0) {
+                    // idxInOld 位置对应的 vnode 就是需要移动的节点
+                    const vnodeToMove = oldChildren[idxInOld]
+                    // 不用忘记除移动操作外还需要打补丁
+                    patch(vnodeToMove, newStartVNode, container)
+                    // 将 vnodeToMove.el 移动到头部节点 oldStartVNode.el之前，因此是有后者作为锚点
+                    insert(vnodeToMove.el, container, oldStartVNode.el)
+                    // 由于 idxInOld 处的节点所对应的真实 DOM 已经移动到了别处，因此将其设置为 undefined
+                    oldChildren[idxInOld] = undefined
+                    // 最后更新 newStartIdx 到下一个位置
+                    newStartVNode = newChildren[++newStartIdx]
+                }
+
             }
         }
 
