@@ -258,6 +258,7 @@ export function createRenderer(options) {
 
         // 循环结束后检查索引值的情况
         if (oldEndIdx < oldStartIdx && newStartIdx <= newEndIdx) {
+            // 添加新节点
             // 如果满足条件，则说明有新的节点遗留，需要挂载它们
             for (let i = newStartIdx; i < newEndIdx; i++) {
                 // 到这里添加的就是不在新的一组子节点中的头部节点了
@@ -266,8 +267,12 @@ export function createRenderer(options) {
                 const anchor = newChildren[newEndIdx + 1] ? newChildren[newEndIdx + 1].el : null
                 patch(null, newChildren[i], container, anchor)
             }
+        } else if (newEndIdx < newStartIdx && oldStartIdx <= oldEndIdx) {
+            // 移除操作
+            for (let i = oldStartIdx; i <= oldEndIdx; i++) {
+                unmount(oldChildren[i])
+            }
         }
-
     }
 
     function mountElement(vnode: any, container: any, anchor) {
