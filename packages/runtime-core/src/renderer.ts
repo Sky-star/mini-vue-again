@@ -245,10 +245,26 @@ export function createRenderer(options) {
                     insert(vnodeToMove.el, container, oldStartVNode.el)
                     // 由于 idxInOld 处的节点所对应的真实 DOM 已经移动到了别处，因此将其设置为 undefined
                     oldChildren[idxInOld] = undefined
-                    // 最后更新 newStartIdx 到下一个位置
-                    newStartVNode = newChildren[++newStartIdx]
+                } else {
+                    // 将 newStartVNode 作为新节点挂载到头部，使用当前头部节点 oldStartVNode.el作为锚点
+                    patch(null, newStartVNode, container, oldStartVNode.el)
                 }
 
+                // 最后更新 newStartIdx 到下一个位置
+                newStartVNode = newChildren[++newStartIdx]
+
+            }
+        }
+
+        // 循环结束后检查索引值的情况
+        if (oldEndIdx < oldStartIdx && newStartIdx <= newEndIdx) {
+            // 如果满足条件，则说明有新的节点遗留，需要挂载它们
+            for (let i = newStartIdx; i < newEndIdx; i++) {
+                // 到这里添加的就是不在新的一组子节点中的头部节点了
+                // 是中间节点，所以要添加到 newEndIdx + 1 之前
+                // 如果没有，添加到末尾
+                const anchor = newChildren[newEndIdx + 1] ? newChildren[newEndIdx + 1].el : null
+                patch(null, newChildren[i], container, anchor)
             }
         }
 
