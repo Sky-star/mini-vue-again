@@ -281,8 +281,110 @@ export function createRenderer(options) {
                 }
             }
 
+            if (moved) {
+                const seq = getSequence(source)
+                // s 指向最长递增子序列的最后一个元素
+                let s = seq.length - 1
+                // i 指向新的一组子节点的最后一个元素
+                let i = count - 1
+                // for 循环使用得 i 递减，即按照图 24 中的箭头方向移动
+                for (i; i >= 0; i--) {
+                    if (source[i] === -1) {
+                        // 说明索引为 i 的节点是全新的节点，应该将其挂载
+                        // 该节点在新 children 中的真实位置索引
+                        const p = i + newStart
+                        const newVNode = newChildren[pos]
+                        // 该节点的下一个节点的位置索引
+                        const nextPos = pos + 1
+                        // 锚点
+                        const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null
+                        // 挂载
+                        patch(null, newVNode, container, anchor)
+                    } else if (i !== seq[s]) {
+                        // 如果节点的索引i不等于 seq[s]的值，说明该节点需要移动
+                        // 该节点在新的一组子节点中的真实位置索引
+                        const pos = i + newStart
+                        const newVNode = newChildren[pos]
+                        // 该节点的下一个节点的位置索引
+                        const nextPos = pos + 1
+                        // 锚点
+                        const anchor = nextPos < newChildren.length ? newChildren[nextPos].el : null
+                        // 移动
+                        insert(newVNode.el, container, anchor)
+                    } else {
+                        // 当 i == seq[s] 时， 说明该节点不需要移动
+                        // 是需要让 s 指向下一个位置
+                        s--
+                    }
+                }
+            }
+
+
         }
 
+    }
+
+    function getSequence(arr) {
+        // 复制原始数组
+        const p = arr.slice()
+        // 最长递增子序列的结果，默认值为 [0]
+        // 这么做是为了方便比较
+        const result = [0]
+        // i 代表数组中的起始索引
+        // j 代表最长递增子序列中最小值的索引，也是最长递增子序列的长度
+        // u 代表二分查找中的左侧索引值
+        // v 代表二分查找中的右侧索引值
+        // c 代表二分查找中的中间索引值
+        let i, j, u, v, c
+        const len = arr.length
+        // 从左向右依次遍历数组中的元素
+        for (i = 0; i < len; i++) {
+            // 获取数组索引值为 i 的元素值
+            const arrI = arr[i]
+            // 由于 result 数组中已经存储了值为0的元素，arrI 等于 0 的情况排除
+            if (arrI !== 0) {
+                // 获取结果数组中的最小值的索引
+                j = result[result.length - 1]
+                // 如果 result 中的最小值小于 arrI，则代表需要将其添加到 result 数组的末尾
+                if (arr[j] < arrI) {
+                    // 将 p[i] 的值设置为当前最长递增子序列的长度
+                    p[i] = j
+                    // 将当前索引添加到 result 数组中
+                    result.push(i)
+                    continue
+                }
+
+                // 走到这里代表 arr[j] >= arrI，表示数组中当前的值大于最小值了
+                // 需要使用二分查找法找到第一个小于 arrI 的值
+                u = 0
+                v = result.length - 1
+                while (u < v) {
+                    c = ((u + v) / 2) | 0
+                    if (arr[result[c]] < arrI) {
+                        u = c + 1
+                    } else {
+                        v = c
+                    }
+                }
+
+                // 如果找到了将对应位置的值进行替换
+                if (arrI < arr[result[u]]) {
+                    if (u > 0) {
+                        p[i] = result[u - 1]
+                        result[u] = i
+                    }
+                }
+            }
+        }
+
+        u = result.length
+        v = result[u - 1]
+        // 由于 result 的索引从后向前的，所以需要反向序列化
+        while (u-- > 0) {
+            result[u] = v
+            v = p[v]
+        }
+        return result
     }
 
     function mountElement(vnode: any, container: any, anchor) {
