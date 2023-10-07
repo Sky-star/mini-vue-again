@@ -103,9 +103,31 @@ export function createRenderer(options) {
             }
         } else if (typeof type === 'object') {
             // 如果 n2.type 的值类型是对象，则它描述的是组件
+            if (!n1) {
+                // 挂载组件
+                mountComponent(n2, container, anchor)
+            } else {
+                // 更新组件
+                patchComponent(n1, n2, container)
+            }
         } else if (type === 'xxx') {
             // 处理其他类型的 vnode
         }
+    }
+
+    function mountComponent(vnode, container, anchor) {
+        // 通过 vnode 获取组件的选项对象， 即 vnode.type
+        const componentOptions = vnode.type
+        // 获取组件的渲染函数 render
+        const { render } = componentOptions
+        // 执行渲染函数， 获取组件要渲染的内容， 即 render 函数返回的虚拟 DOM
+        const subTree = render()
+        // 最后调用 patch 函数来挂载组件所描述的内容，即 subTree
+        patch(null, subTree, container, anchor)
+    }
+
+    function patchComponent(n1, n2, container) {
+
     }
 
     function patchElement(n1: any, n2: any) {
@@ -418,6 +440,5 @@ export function createRenderer(options) {
         render
     }
 }
-
 
 
