@@ -121,17 +121,63 @@ export function createRenderer(options) {
         // 通过 vnode 获取组件的选项对象， 即 vnode.type
         const componentOptions = vnode.type
         // 获取组件的渲染函数 render 和 自身状态 data
-        const { render, data } = componentOptions
+        const { render, data, beforeCreate, created, beforeMounted, mounted, beforeUpdate, updated } = componentOptions
+
+        // 在这里调用 beforeCreate 钩子
+        beforeCreate && beforeCreate()
+
         // 调用 data 函数得到原始数据， 并调用 reactive 函数将其包装为响应式数据
         const state = reactive(data())
+
+        // 定义一个组件实例， 一个组件实例本质上就是一个对象，它包含与组件有关的状态信息
+        const instance = {
+            // 组件自身的状态数据， 即 data
+            state,
+            // 一个布尔值，用来表示组件是否已经被挂载，初始值为 false
+            isMounted: false,
+            // 组件所渲染的内容，即子树(subTree)
+            subTree: null
+        }
+
+        // 将组件实例设置到 vnode 上，用于后续更新
+        vnode.component = instance
+
+        // 在这里调用 created 钩子
+        created && created.call(state)
+
         // 将组件的 render 函数调用包装到 effect 中
         effect(() => {
             // 调用 render 函数时， 将其 this 设置为 state
             // 从而 render 函数内部可以通过 this 访问组件自身状态数据
             // 执行渲染函数， 获取组件要渲染的内容， 即 render 函数返回的虚拟 DOM
             const subTree = render.call(state, state)
-            // 最后调用 patch 函数来挂载组件所描述的内容，即 subTree
-            patch(null, subTree, container, anchor)
+            // 检查组件是否已经被挂载
+            if (!instance.isMounted) {
+                // 在这里调用 beforeMount 钩子
+                beforeMounted ** beforeMounted.call(state)
+                // 初次挂载，调用 patch 函数，第一个参数传递 null
+                patch(null, subTree, container, anchor)
+                // 重点: 将组件实例的 isMounted 设置为 true， 这样当更新发生时就不会再次记性挂载操作，
+                // 而是会执行更新
+                instance.isMounted = true
+
+                // 在这里调用 mounted 钩子
+                mounted && mounted.call(state)
+            } else {
+                // 在这里调用 beforeUpdate 钩子
+                beforeUpdate && beforeUpdate.call(state)
+
+                // 当 isMounted 为 true 时，说明组件已经挂载，只需要完成自更新即可，
+                // 所以在调用 patch 函数时， 第一个参数为组件上一次渲染的子树，
+                // 意思是，使用的新的子树与上一次渲染的子树记性打补丁操作
+                patch(instance.subTree, subTree, container, anchor)
+
+                // 在这里调用 updated 钩子
+                updated && updated.call(state)
+            }
+
+            // 更新组件实例子树
+            instance.subTree = subTree
         }, {
             // 指定该副作用函数的调度器为 queueJob 即可
             scheduler: queueJob
