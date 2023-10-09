@@ -154,7 +154,7 @@ export function createRenderer(options) {
             // 检查组件是否已经被挂载
             if (!instance.isMounted) {
                 // 在这里调用 beforeMount 钩子
-                beforeMounted ** beforeMounted.call(state)
+                beforeMounted && beforeMounted.call(state)
                 // 初次挂载，调用 patch 函数，第一个参数传递 null
                 patch(null, subTree, container, anchor)
                 // 重点: 将组件实例的 isMounted 设置为 true， 这样当更新发生时就不会再次记性挂载操作，
