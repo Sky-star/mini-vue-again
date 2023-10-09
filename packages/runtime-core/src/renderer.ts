@@ -1,5 +1,7 @@
 import { isArray, toRawType } from '../../shared/src/general';
 import { Fragment } from './vnode';
+import { effect, reactive } from '../../reactivity/src/index';
+import { queueJob } from './scheduler';
 
 export function createRenderer(options) {
     // 通过 options 配置项将目标平台的特有API抽离出去
@@ -118,12 +120,22 @@ export function createRenderer(options) {
     function mountComponent(vnode, container, anchor) {
         // 通过 vnode 获取组件的选项对象， 即 vnode.type
         const componentOptions = vnode.type
-        // 获取组件的渲染函数 render
-        const { render } = componentOptions
-        // 执行渲染函数， 获取组件要渲染的内容， 即 render 函数返回的虚拟 DOM
-        const subTree = render()
-        // 最后调用 patch 函数来挂载组件所描述的内容，即 subTree
-        patch(null, subTree, container, anchor)
+        // 获取组件的渲染函数 render 和 自身状态 data
+        const { render, data } = componentOptions
+        // 调用 data 函数得到原始数据， 并调用 reactive 函数将其包装为响应式数据
+        const state = reactive(data())
+        // 将组件的 render 函数调用包装到 effect 中
+        effect(() => {
+            // 调用 render 函数时， 将其 this 设置为 state
+            // 从而 render 函数内部可以通过 this 访问组件自身状态数据
+            // 执行渲染函数， 获取组件要渲染的内容， 即 render 函数返回的虚拟 DOM
+            const subTree = render.call(state, state)
+            // 最后调用 patch 函数来挂载组件所描述的内容，即 subTree
+            patch(null, subTree, container, anchor)
+        }, {
+            // 指定该副作用函数的调度器为 queueJob 即可
+            scheduler: queueJob
+        })
     }
 
     function patchComponent(n1, n2, container) {
