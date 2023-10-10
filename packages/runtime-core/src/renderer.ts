@@ -144,8 +144,24 @@ export function createRenderer(options) {
             subTree: null
         }
 
-        // setupContext, 由于我们还没讲解 emit 和 slots, 所以展示只需要 attrs
-        const setupContext = { attrs }
+        // 定义 emit 函数，它接收两个参数
+        // event: 事件名称
+        // payload: 传递给事件处理函数的参数
+        function emit(event, ...payload) {
+            // 根据约定对事件名称进行处理，例如 change => onChange
+            const eventName = `on${event[0].toUpperCase() + event.slice(1)}`
+            // 根据处理后的事件名称去 props 中寻找对应的事件处理函数
+            const handler = instance.props[eventName]
+            if (handler) {
+                // 调用事件处理函数并传递参数
+                handler(...payload)
+            } else {
+                console.error('事件不存在');
+            }
+        }
+
+        // 将 emit 函数提添加到 setupContext 中，用户可以通过 setupContext 取得 emit 函数
+        const setupContext = { attrs, emit }
         // 调用 setup 函数，将只读版本的 props 作为第一个参数传递，避免用户意外地修改 props
         // 将 setupContext 作为第二个参数
         const setupResult = setup(shallowReadonly(instance.props), setupContext)
@@ -247,7 +263,9 @@ export function createRenderer(options) {
 
         // 遍历为组件传递的 props 数据
         for (const key in propsData) {
-            if (key in options) {
+            // 以字符串 on 开头的 props，无论是否显示地声明， 都将其添加到 props 数据中
+            // 而不会添加到 attrs 中
+            if (key in options || key.startsWith('on')) {
                 // 如果为组件传递的 props 数据在组件自身的 props选项中有定义，则将其视为合法 props
                 props[key] = propsData[key]
             } else {
