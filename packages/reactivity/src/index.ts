@@ -1,2 +1,2 @@
-export { reactive, shallowReactive } from './reactive'
+export { reactive, shallowReactive, shallowReadonly } from './reactive'
 export { effect } from './effect'

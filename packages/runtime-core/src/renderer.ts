@@ -1,6 +1,6 @@
-import { isArray, toRawType } from '../../shared/src/general';
+import { isArray, isFunction, toRawType } from '../../shared/src/general';
 import { Fragment } from './vnode';
-import { effect, reactive, shallowReactive } from '../../reactivity/src/index';
+import { effect, reactive, shallowReactive, shallowReadonly } from '../../reactivity/src/index';
 import { queueJob } from './scheduler';
 
 export function createRenderer(options) {
@@ -121,13 +121,13 @@ export function createRenderer(options) {
         // 通过 vnode 获取组件的选项对象， 即 vnode.type
         const componentOptions = vnode.type
         // 获取组件的渲染函数 render 和 自身状态 data
-        const { render, data, beforeCreate, created, beforeMounted, mounted, beforeUpdate, updated, props: propsOption } = componentOptions
+        let { render, data, beforeCreate, created, beforeMounted, mounted, beforeUpdate, updated, props: propsOption, setup } = componentOptions
 
         // 在这里调用 beforeCreate 钩子
         beforeCreate && beforeCreate()
 
         // 调用 data 函数得到原始数据， 并调用 reactive 函数将其包装为响应式数据
-        const state = reactive(data())
+        const state = data ? reactive(data()) : null
 
         // 调用 resolveProps 函数解析出最终 props 数据与 attrs 数据
         const [props, attrs] = resolveProps(propsOption, vnode.props)
@@ -144,6 +144,25 @@ export function createRenderer(options) {
             subTree: null
         }
 
+        // setupContext, 由于我们还没讲解 emit 和 slots, 所以展示只需要 attrs
+        const setupContext = { attrs }
+        // 调用 setup 函数，将只读版本的 props 作为第一个参数传递，避免用户意外地修改 props
+        // 将 setupContext 作为第二个参数
+        const setupResult = setup(shallowReadonly(instance.props), setupContext)
+        // setupState 用来存储 setup 返回的数据
+        let setupState: any = null
+        // 如果 setup 函数的返回值是函数，则将其作为渲染函数
+        if (isFunction(setupResult)) {
+            // 报告冲突
+            if (render) console.error("setup 函数返回渲染函数， render 选项将被忽略");
+
+            // 将 setupResult 作为渲染函数
+            render = setupResult
+        } else {
+            // 如果 setup 的返回值不是函数，则作为数据状态赋值给 setupState
+            setupState = setupResult
+        }
+
         // 将组件实例设置到 vnode 上，用于后续更新
         vnode.component = instance
 
@@ -157,6 +176,9 @@ export function createRenderer(options) {
                     return state[k]
                 } else if (k in props) {
                     return props[k]
+                } else if (setupState && k in setupState) {
+                    // 渲染上下文需要对 setupState 的支持
+                    return setupState[k]
                 } else {
                     console.error('不存在')
                 }
@@ -167,6 +189,9 @@ export function createRenderer(options) {
                     state[k] = v
                 } else if (k in props) {
                     console.warn(` Attempting to mutate props "${k as string}”. Props are readonly `);
+                } else if (setupState && k in setupState) {
+                    // 渲染上下文需要对 setupState 的支持
+                    setupState[k] = v
                 } else {
                     console.error('不存在')
                 }
