@@ -2,6 +2,7 @@ import { isArray, isFunction, toRawType } from '../../shared/src/general';
 import { Fragment } from './vnode';
 import { effect, reactive, shallowReactive, shallowReadonly } from '../../reactivity/src/index';
 import { queueJob } from './scheduler';
+import { setCurrentInstance } from './component';
 
 export function createRenderer(options) {
     // 通过 options 配置项将目标平台的特有API抽离出去
@@ -146,7 +147,9 @@ export function createRenderer(options) {
             // 组件所渲染的内容，即子树(subTree)
             subTree: null,
             // 将插槽添加到 组件实例上
-            slots
+            slots,
+            // 在组件实例中添加 mounted 数组， 用来存储通过 onMounted 函数注册的生命周期钩子函数
+            mounted: []
         }
 
         // 定义 emit 函数，它接收两个参数
@@ -167,9 +170,13 @@ export function createRenderer(options) {
 
         // 将 emit,slots 函数提添加到 setupContext 中，用户可以通过 setupContext 取得 emit,slots 函数
         const setupContext = { attrs, emit, slots }
+        // 在调用 setup 函数之前， 设置当前组件实例
+        setCurrentInstance(instance)
         // 调用 setup 函数，将只读版本的 props 作为第一个参数传递，避免用户意外地修改 props
         // 将 setupContext 作为第二个参数
         const setupResult = setup(shallowReadonly(instance.props), setupContext)
+        // 在setup 函数执行完毕之后， 重置当前组件实例
+        setCurrentInstance(null)
         // setupState 用来存储 setup 返回的数据
         let setupState: any = null
         // 如果 setup 函数的返回值是函数，则将其作为渲染函数
@@ -243,6 +250,9 @@ export function createRenderer(options) {
 
                 // 在这里调用 mounted 钩子
                 mounted && mounted.call(renderContext)
+
+                // 遍历 instance.mounted 数组并逐个执行即可
+                instance.mounted && instance.mounted.forEach((hook: Function) => hook.call(renderContext))
             } else {
                 // 在这里调用 beforeUpdate 钩子
                 beforeUpdate && beforeUpdate.call(renderContext)
