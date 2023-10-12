@@ -40,6 +40,10 @@ export function createRenderer(options) {
         if (vnode.type === Fragment) {
             vnode.children.forEach((c) => unmount(c))
             return
+        } else if (vnode.type === 'object') {
+            // 对于组件的卸载，本质上是要卸载组件所渲染的内容，即 subTree
+            unmount(vnode.component.subTree)
+            return
         }
         // 方便在内部调用相关的钩子函数
         remove(vnode.el)
