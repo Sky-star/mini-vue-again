@@ -18,20 +18,26 @@ export function defineAsyncComponent(options) {
         name: "AsyncComponentWrapper",
         setup() {
             const loaded = ref(false)
-            // 代表是否超时，默认为 false， 即没有超时
-            const timeout = ref(false)
+            // 定义 error，当错误发生时，用来存储错误对象
+            const error = ref(null)
 
-            loader().then((c) => {
-                InnerComp = c
-                loaded.value = true
-            })
+            loader()
+                .then((c) => {
+                    InnerComp = c
+                    loaded.value = true
+                })
+                .catch((err) => {
+                    // 添加 catch 语句来捕获加载过程中的错误
+                    err.vale = err
+                })
 
             let timer: any = null
             if (options.timeout) {
                 // 如果指定了超时时长， 则开启一个定时器计时
                 timer = setTimeout(() => {
-                    // 超时后将 timeout 设置为 true
-                    timeout.value = true
+                    // 超时后创建一个错误对象，并赋值给 error.value
+                    const err = new Error(`Async component timed out after ${options.timeout}ms.`)
+                    error.value = err
                 }, options.timeout)
             }
 
@@ -42,14 +48,21 @@ export function defineAsyncComponent(options) {
                 if (loaded.value) {
                     // 如果异步组件加载成功， 则渲染被加载的组件
                     return { type: InnerComp }
-                } else if (timeout.value) {
-                    // 如果加载超时了， 并且用户指定了 Error 组件， 则渲染该组件
-                    return options.errorComponent ? { type: options.errorComponent } : placeholder
+                } else if (error.value && options.errorComponent) {
+                    // 只有当错误存在且用户配置了 errorComponent 时才展示 Error 组件，同时将 error 作为 props 传递
+                    return options.errorComponent
+                        ? {
+                            type: options.errorComponent,
+                            props: {
+                                error: error.value
+                            }
+                        }
+                        : placeholder
                 }
 
                 return placeholder
             }
         }
     }
-
 }
+
