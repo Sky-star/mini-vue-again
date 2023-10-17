@@ -108,7 +108,8 @@ export function createRenderer(options) {
                 // 如果旧 vnode 存在，则只需要更新 Fragment 的 children 即可
                 patchChildren(n1, n2, container)
             }
-        } else if (typeof type === 'object') {
+        } else if (typeof type === 'object' || typeof type === 'function') {
+            // 添加对函数式组件的支持
             // 如果 n2.type 的值类型是对象，则它描述的是组件
             if (!n1) {
                 // 挂载组件
@@ -123,8 +124,19 @@ export function createRenderer(options) {
     }
 
     function mountComponent(vnode, container, anchor) {
+        // 检查是否是函数式组件
+        const isFunctional = typeof vnode.type === 'function'
         // 通过 vnode 获取组件的选项对象， 即 vnode.type
-        const componentOptions = vnode.type
+        let componentOptions = vnode.type
+
+        // 如果是函数式组件，则将 vnode.type 做渲染函数，将 vnode.type.props 作为 props 选项定义即可
+        if (isFunctional) {
+            componentOptions = {
+                render: vnode.type,
+                props: vnode.type.props
+            }
+        }
+
         // 获取组件的渲染函数 render 和 自身状态 data
         let { render, data, beforeCreate, created, beforeMounted, mounted, beforeUpdate, updated, props: propsOption, setup } = componentOptions
 
@@ -248,7 +260,7 @@ export function createRenderer(options) {
                 beforeMounted && beforeMounted.call(renderContext)
                 // 初次挂载，调用 patch 函数，第一个参数传递 null
                 patch(null, subTree, container, anchor)
-                // 重点: 将组件实例的 isMounted 设置为 true， 这样当更新发生时就不会再次记性挂载操作，
+                // 重点: 将组件实例的 isMounted 设置为 true， 这样当更新发生时就不会再次挂载挂载操作，
                 // 而是会执行更新
                 instance.isMounted = true
 
