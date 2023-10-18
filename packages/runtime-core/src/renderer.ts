@@ -41,8 +41,15 @@ export function createRenderer(options) {
             vnode.children.forEach((c) => unmount(c))
             return
         } else if (vnode.type === 'object') {
-            // 对于组件的卸载，本质上是要卸载组件所渲染的内容，即 subTree
-            unmount(vnode.component.subTree)
+            // vnode.shouldKeepAlive 是一个布尔值，用来标识该组件是否应该被 KeepAlive
+            if (vnode.shouldKeepAlive) {
+                // 对于需要被 KeepAlive 的组件，我们不应该真的卸载它，而应该调用该组件的父组件
+                // 即 KeepAlive 组件的 _deActivate 函数使其失活
+                vnode.keepAliveInstance._deActivate(vnode)
+            } else {
+                // 对于组件的卸载，本质上是要卸载组件所渲染的内容，即 subTree
+                unmount(vnode.component.subTree)
+            }
             return
         }
         // 方便在内部调用相关的钩子函数
@@ -112,8 +119,13 @@ export function createRenderer(options) {
             // 添加对函数式组件的支持
             // 如果 n2.type 的值类型是对象，则它描述的是组件
             if (!n1) {
-                // 挂载组件
-                mountComponent(n2, container, anchor)
+                if (n2.keptAlive) {
+                    // 如果该组件已经被 KeepAlive， 则不会重新挂载它， 而是会调用 _activate 来激活它
+                    n2.keepAliveInstance(n2, container, anchor)
+                } else {
+                    // 挂载组件
+                    mountComponent(n2, container, anchor)
+                }
             } else {
                 // 更新组件
                 patchComponent(n1, n2, container)
@@ -165,7 +177,23 @@ export function createRenderer(options) {
             // 将插槽添加到 组件实例上
             slots,
             // 在组件实例中添加 mounted 数组， 用来存储通过 onMounted 函数注册的生命周期钩子函数
-            mounted: []
+            mounted: [],
+            // 只有 KeepAlive 组件的实例下会有 keepAliveCtx 属性
+            keepAliveCtx: {}
+        }
+
+        // 检查当前要挂载的组件是否是 KeepAlive 组件
+        const isKeepAlive = vnode.type.__isKeepAlive
+        if (isKeepAlive) {
+            // 在 keepAlive 组件的实例上添加 keepAliveCtx 对象
+            instance.keepAliveCtx = {
+                // move 函数用来移动一段 vnode
+                move(vnode, container, anchor) {
+                    // 本质上是将组件渲染的内容移动到执行容器中， 即隐藏容器中
+                    insert(vnode.component.subTree.el, container, anchor)
+                },
+                createElement
+            }
         }
 
         // 定义 emit 函数，它接收两个参数

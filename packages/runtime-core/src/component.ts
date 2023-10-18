@@ -2,10 +2,8 @@
 let currentInstance = null
 
 // 该方法接收组件实例作为参数，并将该实例设置为 currentInstance
-function setCurrentInstance(instance) {
+export function setCurrentInstance(instance) {
     currentInstance = instance
 }
 
-
-
-export { setCurrentInstance }
+export const getCurrentInstance = () => currentInstance
