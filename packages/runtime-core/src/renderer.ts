@@ -115,6 +115,19 @@ export function createRenderer(options) {
                 // 如果旧 vnode 存在，则只需要更新 Fragment 的 children 即可
                 patchChildren(n1, n2, container)
             }
+        } else if (typeof type === 'object' && type.__isTeleport) {
+            // 组件选项中如果存在 __isTeleport 标识，则它是 Teleport 组件，
+            // 调用 Teleport 组件选项中的 process 函数将控制权交接出去
+            // 传递给 process 函数的第五个参数是渲染器的一些内部方法
+            type.process(n1, n2, container, {
+                patch,
+                patchChildren,
+                unmount,
+                // 用来移动被 Teleport 的内容
+                move(vnode, container, anchor) {
+                    insert(vnode.component ? vnode.component.subTree.el : vnode.el, container, anchor)
+                }
+            })
         } else if (typeof type === 'object' || typeof type === 'function') {
             // 添加对函数式组件的支持
             // 如果 n2.type 的值类型是对象，则它描述的是组件
