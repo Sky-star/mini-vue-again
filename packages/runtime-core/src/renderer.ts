@@ -36,6 +36,8 @@ export function createRenderer(options) {
 
     // 卸载函数
     function unmount(vnode) {
+        // 判断 VNode 是否需要过渡处理
+        const needTransition = vnode.transition
         // 在卸载时， 如果卸载的 vnode 类型为 Fragment，则需要卸载其 children
         if (vnode.type === Fragment) {
             vnode.children.forEach((c) => unmount(c))
@@ -52,8 +54,16 @@ export function createRenderer(options) {
             }
             return
         }
-        // 方便在内部调用相关的钩子函数
-        remove(vnode.el)
+        // 将卸载动作封装到 performRemove 函数中
+        const performRemove = () => remove(vnode.el)
+        if (needTransition) {
+            // 如果需要过渡处理，则调用 transition.leave 钩子
+            // 同时将 DOM 元素 和 performRemove 函数作为参数传递
+            vnode.transition.leave(vnode.el, performRemove)
+        } else {
+            // 如果不需要过渡处理
+            performRemove()
+        }
     }
 
     // 承担着具体的渲染逻辑
@@ -692,8 +702,19 @@ export function createRenderer(options) {
             }
         }
 
+        // 判断一个 VNode 是否需要过渡
+        const needTransition = vnode.transition
+        if (needTransition) {
+            // 调用 transition.beforeEnter 钩子，并将 DOM 元素作为参数传递
+            vnode.transition.beforeEnter(el)
+        }
+
         // 调用 insert 函数将元素插入到容器内
         insert(el, container, anchor)
+        if (needTransition) {
+            // 调用 transition.beforeEnter 钩子，并将 DOM 元素作为参数传递
+            vnode.transition.enter(el)
+        }
     }
 
     return {
